@@ -1,4 +1,4 @@
-%%%%%% Calibrating Control Map to Robot Motors %%%%%%
+% Calibrates wheels
 function [leftInputSlope, leftInputIntercept, rightInputSlope, rightInputIntercept] = WheelCalibration(XbeeSerial, tag, lowerTag)
 %Clear the workspace to start the program 
 % close all

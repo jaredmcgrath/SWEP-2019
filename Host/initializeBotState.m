@@ -2,6 +2,10 @@ function [botPositionArray, botTagString] = initializeBotState(maxX, maxY)
 %% initializeBotState
 % This function is responsible for getting the tags of bots being used
 % and their initial x, y, and theta w.r.t. positive x-axis
+%
+% Get initial position of all of the robots and the general baseline for the
+% axis frame, the heading of the axis frame needs to be calculated from a
+% compass or phone app
 %% TODO: Param/return docs
 disp('Input coordinates in meters to 2 decimal places')
 disp('Input angles in degrees to the nearest degree relative to positive x')

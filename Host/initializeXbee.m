@@ -5,13 +5,6 @@ function [botTags, botTagsLower] = initializeXbee(XbeeSerial, ...
 %%
 % Open for binary writing
 fopen(XbeeSerial);
-%Get initial position of all of the robots and the general baseline for the
-%axis frame, the heading of the axis frame needs to be calculated from a
-%compass or phone app
-xInit = zeros(length(botTags), 4);
-yInit = zeros(length(botTags), 4);
-thetaString = 'Input the heading (from North) of the x-axis in rounded to the nearest degree, 0 to 359 ';
-thetaTemp = input(thetaString, 's');
 
 %converts any input for x, y, and theta into an acceptable value so that
 %robots can receive them accurately
