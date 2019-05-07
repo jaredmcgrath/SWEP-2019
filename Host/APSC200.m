@@ -4,10 +4,9 @@ clear
 clc
 
 %% TO DO
-% a lot
-% - Revise setup structure
-%   - Get initial bot position data in a single function
-%   - Use that position for SetupXBee and as initial MATLAB script
+% - Wheel calibration
+% - Write docs for initializeBotState, sendInitialState, sendInstruction
+% - Make a config file for all settings instead of hard-coding them
 
 %% Variables in this code that are affected by variables in the Arduino code
 % time_step (in EKF) should be the same as movementDuration in the 'duino 
@@ -22,6 +21,9 @@ recompilePingBeaconCode = false;
 enableDebuggingRPi = false; 
 % Enable debugging for this script and related functions
 debug = true;
+% Max x and y coordinates of the grid in meters
+MAX_X = 5.12;
+MAX_Y = 5.12;
 % END RUNTIME PARAMETERS
 
 %% OLD LOCALIZATION SETUP (remove or revise, not functional)
@@ -54,40 +56,28 @@ debug = true;
 
 %% XBEE SETUP
 % Set up the Xbee connection
-XbeeSerial = serial('COM8','Terminator','CR', 'Timeout', 2);
-
-% Call the Setup function with the Xbee object to set up all robots, it will
-% take user input for all robot tags for robots in use
-[bots, botTagLower] = SetupXbee(XbeeSerial);
+xbeeSerial = serial('COM8','Terminator','CR', 'Timeout', 2);
 % END XBEE SETUP
 
-%% OLD ALGORITHM SELECTION (remove)
-%
-% Have the user decide which algorithm they would like to perform then call
-% the appropriate function
-% while (true)
-%     algorithm = input(['Which algorithm would you like to perform?' ...
-%         '\n(1 = Flocking, 2 = Formation, 3 = Deployment, 4 = Krause, 5 = Testing) ']);
-%     if (algorithm ~= 1 && algorithm ~= 2 && algorithm ~= 3 && algorithm ~= 4 && algorithm ~= 5)
-%         disp('Invalid algorithm selection, please try again');
-%     else
-%         break;
-%     end
-% end
-% END OLD ALGORITHM SELECTION
+%% BOT SETUP
+% Call the initializeBotState to get list of bots being worked with, and
+% their states
+[position, tagString, heading] = initializeBotState(MAX_X, MAX_Y);
+% Send initial positions to bots
+sendInitialState(xbeeSerial, position, tagString, heading);
 
 %% WHEEL CALIBRATION
 %See if the user wants to calibrate the robots wheels
 calibrate = input('Would you like to calibrate the wheels (y/n)? ', 's');
 if (calibrate == 'Y' || calibrate == 'y')
-    fopen(XbeeSerial);
-    fwrite(XbeeSerial,'C');
-    fwrite(XbeeSerial,'C');
-    fwrite(XbeeSerial,'C');
-    fclose(XbeeSerial);
+    fopen(xbeeSerial);
+    fwrite(xbeeSerial,'C');
+    fwrite(xbeeSerial,'C');
+    fwrite(xbeeSerial,'C');
+    fclose(xbeeSerial);
     for i=1:length(bots)
         [leftInputSlope, leftInputIntercept, rightInputSlope, rightInputIntercept]...
-            = WheelCalibration(XbeeSerial, bots(i), botTagLower(i));
+            = WheelCalibration(xbeeSerial, bots(i), botTagLower(i));
     end
 else
     leftInputSlope = 13;
@@ -103,7 +93,7 @@ position = zeros(length(bots), 3);
 oldPosition = position;
 % Estimate/predict next position (depending on if we localize or not)
 [position, errorCovMat] = PositionCalc(botTagLower, beaconLocations,...
-    errorCovMat, XbeeSerial, rpi, localizeThisIteration, beaconGPIO,...
+    errorCovMat, xbeeSerial, rpi, localizeThisIteration, beaconGPIO,...
     pingBeaconPath, pingBeaconDelay, debug, oldPosition);
 
 nextPosition = getNextPosition(algorithm, bots, position);
@@ -138,21 +128,21 @@ while (true)
     %%%%%CONTROL SECTION%%%%%
     % Determine motor inputs based off of controller 
   
-    AdjustPosition(XbeeSerial, bots, position, ...
+    AdjustPosition(xbeeSerial, bots, position, ...
         nextPosition, index, error, leftInputSlope, leftInputIntercept, ...
         rightInputSlope, rightInputIntercept);
 
 
     % start all the robots to start moving after giving them motor inputs
-    fopen(XbeeSerial);
-    fwrite(XbeeSerial, '1');
-    fclose(XbeeSerial);
+    fopen(xbeeSerial);
+    fwrite(xbeeSerial, '1');
+    fclose(xbeeSerial);
 
     %%%%%NAVIGATION AND ESTIMATION SECTION%%%%%        
     %calculate the new position of the robot
     oldPosition = position;
     [position, errorCovMat] = PositionCalc(botTagLower, beaconLocations, ...
-        errorCovMat, XbeeSerial, rpi, localizeThisIteration, beaconGPIO, ...
+        errorCovMat, xbeeSerial, rpi, localizeThisIteration, beaconGPIO, ...
         pingBeaconPath, pingBeaconDelay, debug, oldPosition);
     
     index = index + 1;

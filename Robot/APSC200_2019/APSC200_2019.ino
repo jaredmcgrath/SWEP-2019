@@ -11,7 +11,7 @@
 #include <IRremote.h>   // Localization: Needed to read received IR patterns
 
 /////////////////////////////// Program Execution Options ///////////////////////////////////////////////
-#define DEBUG 1
+#define DEBUG 0
 
 /////////////////////////////// Program Parameters ///////////////////////////////////////////////
 #define MOVEMENT_DURATION 1000      // [msec] The amount of time that the robots will drive for before they stop (1000 for 1 second)
@@ -125,6 +125,8 @@ void botSetup(){
   
   #if DEBUG
   Serial.println(F("botSetup completed"));
+  // Bots send a RESP_OK when they've come online
+  confirm();
   #endif
 }
 
@@ -146,6 +148,8 @@ void botCheck(){
   Serial.print(F("Inital X ")); Serial.println(xPosition); 
   Serial.print(F("Initial Y ")); Serial.println(yPosition); 
   Serial.println(F("botCheck completed"));
+  // Bots send a RESP_OK when they've come online
+  confirm();
   #endif
 }
 

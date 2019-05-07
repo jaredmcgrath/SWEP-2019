@@ -3,6 +3,10 @@ void checkForIns() {
   byte insId;
   if (XBee.available()) {
     data = XBee.read();
+    #if DEBUG
+    Serial.println("Instruction received:");
+    Serial.println(data, HEX);
+    #endif
     insId = getInsId(data);
     // If instuction ID is for this bot, or it is a global instruction
     if (insId == id || insId == ALL_AGENTS) {
@@ -112,6 +116,7 @@ void badResponse() {
 }
 
 void confirm() {
+  XBee.write('K');
   XBee.write((id<<5) | 0x1F);
 }
 
@@ -124,23 +129,26 @@ void reset() {
  */
 void getX() {
   // Hopefully x fits into the allocated 13 bits
-  uint16_t x = (uint16_t)(((int)xPosition*100)%512);
-  message[0] = (id<<5) | (x>>8 & 0x1F);
+  uint16_t x = (uint16_t)(xPosition*100);
+  message[0] = (id<<5) | ((x>>8) & 0x1F);
   message[1] = x & 0xFF;
   XBee.write((char*)message, 2);
 }
 
 void getY() {
   // Hopefully y also fits into 13 bits
-  uint16_t y = (uint16_t)((int)yPosition*100);
+  uint16_t y = (uint16_t)(yPosition*100);
   message[0] = (id<<5) | (y>>8 & 0x1F);
   message[1] = y & 0xFF;
   XBee.write((char*)message, 2);
 }
 
 void getAngle() {
-  uint16_t t = (uint16_t)(theta*180/PI);
-  t = t<0 ? t+360 : t;
+  uint16_t t = theta<0 ? (uint16_t)((theta+2*PI)*180/PI) : (uint16_t)(theta*180/PI);
+  #if DEBUG
+  Serial.println("Angle in degrees:");
+  Serial.println(t);
+  #endif
   message[0] = (id<<5) | (t>>8 & 0x1F);
   message[1] = t & 0xFF;
   XBee.write((char*)message, 2);
@@ -170,7 +178,12 @@ void getBattery() {
  */
 byte getNextByte() {
   while(!XBee.available());
-  return XBee.read();
+  byte nextByte = XBee.read();
+  #if DEBUG
+  Serial.println("Second byte received:");
+  Serial.println(nextByte);
+  #endif
+  return nextByte;
 }
  
 void setX(byte msb) {
@@ -186,6 +199,10 @@ void setY(byte msb) {
 void setHeading(byte msb) {
   uint16_t h = msb<<8 | getNextByte();
   baseline = h>180 ? (h-360)*PI/180 : h*PI/180;
+  #if DEBUG
+  Serial.println("Heading set");
+  Serial.println(baseline);
+  #endif
   // IMPORTANT: Setting isHeadingSet true allows botCheck to complete
   isHeadingSet = true;
 }
