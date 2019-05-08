@@ -1,3 +1,4 @@
+<!-- Config XML file for APSC200 P2 host-robot interface -->
 <config>
 	<boundary>
 		<maxX>5.12</maxX>
@@ -5,7 +6,85 @@
 	</boundary>
 	
 	<botTags>
+		<bot>
+			<tag>S</tag>
+			<value>0</value>
+			<name>Shannon</name>
+			<leftWheel>
+				<slope>13</slope>
+				<intercept>90</intercept>
+			</leftWheel>
+			<rightWheel>
+				<slope>13</slope>
+				<intercept>90</intercept>
+			</rightWheel>
+		</bot>
+		<bot>
+			<tag>E</tag>
+			<value>1</value>
+			<name>Euler</name>
+			<leftWheel>
+				<slope>13</slope>
+				<intercept>90</intercept>
+			</leftWheel>
+			<rightWheel>
+				<slope>13</slope>
+				<intercept>90</intercept>
+			</rightWheel>
+		</bot>
+		<bot>
+			<tag>L</tag>
+			<value>2</value>
+			<name>Laplace</name>
+			<leftWheel>
+				<slope>13</slope>
+				<intercept>90</intercept>
+			</leftWheel>
+			<rightWheel>
+				<slope>13</slope>
+				<intercept>90</intercept>
+			</rightWheel>
+		</bot>
+	</botTags>
 	
+	<beacons>
+		<beacon>
+			<irPin>17</irPin>
+			<usPin>27</usPin>
+			<x>1.5</x>
+			<y>0</y>
+		</beacon>
+		<beacon>
+			<irPin>10</irPin>
+			<usPin>9</usPin>
+			<x>0.5</x>
+			<y>0</y>
+		</beacon>
+		<beacon>
+			<irPin>19</irPin>
+			<usPin>26</usPin>
+			<x>0</x>
+			<y>0.5</y>
+		</beacon>
+		<beacon>
+			<irPin>25</irPin>
+			<usPin>8</usPin>
+			<x>0</x>
+			<y>1.5</y>
+		</beacon>
+		<beacon>
+			<irPin>20</irPin>
+			<usPin>21</usPin>
+			<x>0</x>
+			<y>2.5</y>
+		</beacon>
+	</beacons>
+	
+	<rpi>
+		<address>130.15.101.192</address>
+		<username>pi</username>
+		<password>swep2018</password>
+	</rpi>
 	
 	<instructionSet>
 		<instruction>

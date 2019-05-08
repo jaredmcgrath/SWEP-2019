@@ -21,10 +21,14 @@ recompilePingBeaconCode = false;
 enableDebuggingRPi = false; 
 % Enable debugging for this script and related functions
 debug = true;
-% Max x and y coordinates of the grid in meters
-% TODO: Move to config file
-MAX_X = 5.12;
-MAX_Y = 5.12;
+
+% Read config file
+ config = xmlread('config.xml');
+% allBots = configDOM.getElementsByTagName('tag');
+% for i = 0:allBots.getLength-1
+%     currentBot = allBots.item(i);
+%     disp(char(currentBot.getFirstChild.getData))
+% end
 % END RUNTIME PARAMETERS
 
 %% OLD LOCALIZATION SETUP (remove or revise, not functional)
@@ -63,7 +67,7 @@ xbeeSerial = serial('COM8','Terminator','CR', 'Timeout', 2);
 %% BOT SETUP
 % Call the initializeBotState to get list of bots being worked with, and
 % their states
-[position, tagString, heading] = initializeBotState(MAX_X, MAX_Y);
+[position, tagString, heading] = initializeBotState(config);
 % Send initial positions to bots
 sendInitialState(xbeeSerial, position, tagString, heading);
 

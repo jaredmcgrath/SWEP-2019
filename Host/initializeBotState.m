@@ -1,4 +1,4 @@
-function [botPositionArray, botTagString, heading] = initializeBotState(maxX, maxY)
+function [botPositionArray, botTagString, heading] = initializeBotState(config)
 %% initializeBotState
 % Query user for:
 %   - Bot tags
@@ -7,11 +7,9 @@ function [botPositionArray, botTagString, heading] = initializeBotState(maxX, ma
 %
 % Parameters:
 %   maxX
-%     Maximum x-coordinate in meters. Due to communication protocol design,
-%     should be less than or equal to 5.12
+%     The maximum x value boundary in meters, usually 5.12
 %   maxY
-%     Maximum y-coordinate in meters. Due to communication protocol design,
-%     should be less than or equal to 5.12
+%     The maximum y value boundary in meters, usually 5.12
 %
 % Returns:
 %   botPositionArray
@@ -22,6 +20,20 @@ function [botPositionArray, botTagString, heading] = initializeBotState(maxX, ma
 %     Each character represents one bot
 %   heading
 %     The heading of the positive x-axis in degrees
+
+% Extract info from config
+maxXNodes = config.getElementsByTagName('maxX');
+maxXNode = maxXNodes.item(0);
+maxX = str2num(maxXNode.getFirstChild.getData);
+maxYNodes = config.getElementsByTagName('maxY');
+maxYNode = maxYNodes.item(0);
+maxY = str2num(maxYNode.getFirstChild.getData);
+tagNodes = config.getElementsByTagName('tag');
+validBotString = '';
+for i = 0:tagNodes.getLength
+    bot = tagNodes.item(i);
+    validBotString = validBotString + char(bot.getFirstChild.getData);
+end
 
 botTagString = input('Enter bot tags: ', 's');
 botPositionArray = zeros(length(botTagString), 2);
