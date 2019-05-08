@@ -95,6 +95,9 @@ void executeIns(byte ins) {
     case 0xE2:
       confirm();
       break;
+    case 0xE3:
+      dontGo();
+      break;
     default:
       badResponse();
       break;

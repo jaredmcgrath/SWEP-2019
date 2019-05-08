@@ -5,7 +5,7 @@ clc
 
 %% TO DO
 % - Wheel calibration
-% - Write docs for initializeBotState, sendInitialState, sendInstruction
+%    - Maybe save last calibration in a config file?
 % - Make a config file for all settings instead of hard-coding them
 
 %% Variables in this code that are affected by variables in the Arduino code
@@ -22,6 +22,7 @@ enableDebuggingRPi = false;
 % Enable debugging for this script and related functions
 debug = true;
 % Max x and y coordinates of the grid in meters
+% TODO: Move to config file
 MAX_X = 5.12;
 MAX_Y = 5.12;
 % END RUNTIME PARAMETERS
