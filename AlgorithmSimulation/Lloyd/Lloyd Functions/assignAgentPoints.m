@@ -1,4 +1,5 @@
-function [ agentPoints ] = assign_points( agentPositions, coms, sides, partitionNumber,r_o,algorithm_type,E )
+function [ agentPoints ] = assignAgentPoints( agentPositions, coms, sides,...
+    partitionNumber,rObs,E)
 % Assigns the points that can be seen by the agents to their closest
 % agents. These points are added to agentPoints, a 1xn cell array, where
 % the ith cell is an rx2 matrix containing the ith agent's points.
@@ -21,13 +22,13 @@ for i = 1 : r % iterate over each cell
         x_0 = agentPositions(agentNum,1); % find position of that agent
         y_0 = agentPositions(agentNum,2);
         % Find the 'square' surrounding (x_0,y_0)
-        xMin = max((ceil(partitionNumber*(x_0-r_o))/partitionNumber),1/partitionNumber);
-        yMin = max((ceil(partitionNumber*(y_0-r_o))/partitionNumber),1/partitionNumber);
-        xMax = min((ceil(partitionNumber*(x_0+r_o))/partitionNumber),sides);
-        yMax = min((ceil(partitionNumber*(y_0+r_o))/partitionNumber),sides);
+        xMin = max((ceil(partitionNumber*(x_0-rObs))/partitionNumber),1/partitionNumber);
+        yMin = max((ceil(partitionNumber*(y_0-rObs))/partitionNumber),1/partitionNumber);
+        xMax = min((ceil(partitionNumber*(x_0+rObs))/partitionNumber),sides);
+        yMax = min((ceil(partitionNumber*(y_0+rObs))/partitionNumber),sides);
         for x = xMin : 1/partitionNumber : xMax % iterate through x values in the square
             for y = yMin : 1/partitionNumber : yMax % iterate through y values in the square
-                if sqrt((x-x_0)^2 + (y-y_0)^2) <= r_o % check if (x,y) is in the circle of observation
+                if sqrt((x-x_0)^2 + (y-y_0)^2) <= rObs % check if (x,y) is in the circle of observation
                     cellPoints = addToArray(cellPoints,x,y);
                 end
             end
@@ -39,13 +40,13 @@ for i = 1 : r % iterate over each cell
             minAgentNum = coms{1,i}(1); 
             x_0 = agentPositions(minAgentNum,1);
             y_0 = agentPositions(minAgentNum,2);
-            minimum = distance_between(x_0,y_0,x,y,algorithm_type,E(minAgentNum));
+            minimum = distanceBetween(x_0,y_0,x,y,E(minAgentNum));
             for k = 2 : size(coms{1,i},1) % iterate over the agents in that cell
                 agentNum = coms{1,i}(k);
                 x_0 = agentPositions(agentNum,1);
                 y_0 = agentPositions(agentNum,2);
-                if distance_between(x_0,y_0,x,y,algorithm_type,E(agentNum)) < minimum
-                    minimum = distance_between(x_0,y_0,x,y,algorithm_type,E(agentNum));
+                if distanceBetween(x_0,y_0,x,y,E(agentNum)) < minimum
+                    minimum = distanceBetween(x_0,y_0,x,y,E(agentNum));
                     minAgentNum = agentNum;
                 end
             end
