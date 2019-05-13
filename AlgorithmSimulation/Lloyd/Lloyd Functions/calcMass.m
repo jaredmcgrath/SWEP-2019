@@ -1,16 +1,31 @@
-function mass = calcMass(agentPoints,D,numAgents,partitions)
-% Outputs a vector with the mass of the region of agent i stored in 
-% mass(i).
-% D is a sides*partitions-by-sides*partitions matrix of density values
-% where the entry of the matrix at i,j is the value of the density at 
-% (i/p,j/p)
-mass = zeros(1,numAgents);
+function mass = calcMass(agentPoints,density,partitions)
+%% calcMass
+% Calculates the mass of the observed region for each agent
+%
+% Parameters:
+%   agentPoints
+%     n-by-1 cell array, where cell i contains agent i's observed points
+%   density
+%     (sides*partitions)-by-(sides*partitions) matrix of the density for
+%     the current iteration
+%   partitions
+%     Number of subdivisions within each unit length of the arena
+%
+% Returns:
+%   mass
+%     n-by-1 vector where the ith entry is the mass of agent i's observed
+%     region
+
+numAgents = size(agentPoints,1);
+mass = zeros(numAgents,1);
+% For each agent
 for i = 1:numAgents
-    for j = 1:size(agentPoints{1,i},1)
-        x = floor(agentPoints{1,i}(j,1)*(partitions));
-        y = floor(agentPoints{1,i}(j,2)*(partitions));
+    % For each point in the agent's region
+    for j = 1:size(agentPoints{i},1)
+        x = floor(agentPoints{i}(j,1)*(partitions));
+        y = floor(agentPoints{i}(j,2)*(partitions));
         if x > 0 && y > 0
-            mass(i) = mass(i) + D(x,y);
+            mass(i,1) = mass(i,1) + density(y,x);
         end
      end
 end
