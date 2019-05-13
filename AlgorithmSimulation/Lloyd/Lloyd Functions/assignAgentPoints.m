@@ -1,5 +1,6 @@
-function [ agentPoints ] = assignAgentPoints( agentPositions, coms, sides,...
+function agentPoints = assignAgentPoints(agentPositions, coms, sides,...
     partitionNumber,rObs,E)
+%% TODO: Fix this function
 % Assigns the points that can be seen by the agents to their closest
 % agents. These points are added to agentPoints, a 1xn cell array, where
 % the ith cell is an rx2 matrix containing the ith agent's points.
