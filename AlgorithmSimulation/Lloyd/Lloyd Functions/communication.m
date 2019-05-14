@@ -29,4 +29,5 @@ for i = 1:numAgents
 end
 % Calculate the communication cells
 G = graph(adjMatrix);
-commCells = conncomp(G,'OutputForm','cell');
+commCells = cellfun(@transpose,conncomp(G,'OutputForm','cell'),...
+    'UniformOutput',false);
