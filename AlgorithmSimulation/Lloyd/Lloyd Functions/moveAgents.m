@@ -34,6 +34,8 @@ direction = centroids - agentPositions;
 magnitude = vecnorm(direction,2,2);
 % Scale directions by the corresponding magnitudes
 direction = bsxfun(@rdivide,direction,magnitude(:));
+% Filter any NaN directions to 0
+direction(isnan(direction)) = 0;
 % Determine magnitudes of velocities
 if strcmp(velocityType, 'Constant Velocity')
     velocity = maxVelocity;
@@ -41,6 +43,8 @@ else
     velocity = magnitude*scaleFactor;
     % Filter any velocities > maxVelocity
     velocity(velocity>maxVelocity) = maxVelocity;
+    % Filter any NaN velocities to 0
+    velocity(isnan(velocity)) = 0;
 end
 % Get the change in position from velocityFunction
 deltaPosition = velocityFunction(direction, velocity);

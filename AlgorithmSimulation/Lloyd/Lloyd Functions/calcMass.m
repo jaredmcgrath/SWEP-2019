@@ -14,18 +14,8 @@ function mass = calcMass(agentPoints,density,partitions)
 % Returns:
 %   mass
 %     n-by-1 vector where the ith entry is the mass of agent i's observed
-%     region
+%     region (x) sum(density(partitions*[x(:,2) x(:,1)]),'all')
 
-numAgents = size(agentPoints,1);
-mass = zeros(numAgents,1);
-% For each agent
-for i = 1:numAgents
-    % For each point in the agent's region
-    for j = 1:size(agentPoints{i},1)
-        x = floor(agentPoints{i}(j,1)*(partitions));
-        y = floor(agentPoints{i}(j,2)*(partitions));
-        if x > 0 && y > 0
-            mass(i,1) = mass(i,1) + density(y,x);
-        end
-     end
-end
+mass = cellfun(@(x) sum(density(...
+            sub2ind(size(density),partitions*x(:,2),partitions*x(:,1)))...
+        ,'all'), agentPoints);

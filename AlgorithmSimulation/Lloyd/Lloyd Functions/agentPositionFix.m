@@ -1,6 +1,19 @@
 function agentPositions = agentPositionFix(agentPositions,partitions,sides)
-% This function ensures that the agents begin on partition lines. This
-% should only be called at the beginning of the simulation.
+%% agentPositions
+% Helper function to correct initial agent positions. Should be called upon
+% initialization of a simulation
+%
+% Parameters:
+%   agentPositions
+%     n-by-2 vector of the x, y positions for n agents before moving
+%   partitions
+%     Number of subdivisions within each unit length of the arena
+%   sides
+%     Side length of arena
+%
+% Returns:
+%   agentPositions
+%     n-by-2 vector of the x, y positions for n agents after moving
 
 % Ensure agents fall on a partition gridline
 agentPositions = ceil(agentPositions*partitions)/partitions;

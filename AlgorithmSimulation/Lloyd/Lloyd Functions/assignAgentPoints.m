@@ -29,7 +29,7 @@ agentPoints = cell(numAgents,1);
 allPoints = [reshape(X, [(sides*partitions)^2 1]) ...
     reshape(Y, [(sides*partitions)^2 1])]/partitions;
 % For each commCell
-for iComm = 1:size(commCells,1)
+for iComm = 1:size(commCells,2)
     commCell = commCells{iComm};
     [idx, dist] = rangesearch(allPoints, agentPositions(commCell,:), rObs);
     % sortedIndexes formats indexes, distance, and agent # in an m-by-3
@@ -64,4 +64,3 @@ for iComm = 1:size(commCells,1)
         lastIdx = lastIdx + counts(i);
     end
 end
-
