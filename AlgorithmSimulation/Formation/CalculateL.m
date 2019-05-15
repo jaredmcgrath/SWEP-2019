@@ -1,11 +1,23 @@
-function [L] = CalculateL(A,D)
-% CalculateL: The purpose of this function is to calcualte the L matrix
-% required by the GUI given the A and D matrices calcualted previously
-%   This function uses the A matrix obtained from GetA and the D matrix
-%   calcualted in CalcualteD. Using these two parameters, the resulting L
-%   matrix can be written
+function [L] = CalculateL(A)
+%% CalculateL
+% This function calculates the Laplacian Matrix given the adjacency matrix.
+% 
+% Parameters:
+%   A -- the adjacency matrix
+%
+% Returns:
+%   L -- Laplacian Matrix
 
-% HINT: This should only take one line of code
+%% Function Code
+
+num_agents = size(A,1);
+D = zeros(num_agents);
+
+for i = 1:num_agents
+    for j = 1:num_agents
+        D(i,i) = D(i,i) + A(i,j);
+    end
+end
 
 L = D - A;
 end
