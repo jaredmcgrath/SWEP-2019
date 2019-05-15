@@ -1,58 +1,67 @@
-function agentPoints = assignAgentPoints(agentPositions, coms, sides,...
-    partitionNumber,rObs,E)
-%% TODO: Fix this function
-% Assigns the points that can be seen by the agents to their closest
-% agents. These points are added to agentPoints, a 1xn cell array, where
-% the ith cell is an rx2 matrix containing the ith agent's points.
+function agentPoints = assignAgentPoints(agentPositions, commCells, sides,...
+    partitions,rObs)
+%% agentPoints
+% Determine which points within an agent's observed region it is assigned.
+% Agents in the same communication cell will not be assigned the same
+% point. However, agents who cannot communicate may cover the same point(s)
+%
+% Parameters:
+%   agentPositions
+%     n-by-2 vector of the x, y positions for n agents
+%   commCells
+%     Cell array, where each cell is one communication group
+%   sides
+%     Side length of arena
+%   partitions
+%     Number of subdivisions within each unit length of the arena
+%   rObs
+%     Radius of observation for all agents
+%
+% Returns:
+%   agentPoints
+%     Cell array with each cell containing an ni-by-2 vector of (x,y)
+%     points that the ith agent is assigned
 
-% CellPoints contains all the points that a coms group can see. Then
-% cellpoints is divided between the agents in the corresponding coms group.
-r = size(coms,2);
-
-n = size(agentPositions,1);
-agentPoints = cell(1,n);
-
-for i = 1 : n
-    agentPoints{1,i} = -1*ones(1,2); % Initialize agentPoints to [-1 -1] arrays.
-end
-
-for i = 1 : r % iterate over each cell
-    cellPoints = [-1 -1];
-    for j = 1 : size(coms{1,i},1) % iterate over each bot in each cell, which are already ordered
-        agentNum = coms{1,i}(j); % find number label of first ordered agent
-        x_0 = agentPositions(agentNum,1); % find position of that agent
-        y_0 = agentPositions(agentNum,2);
-        % Find the 'square' surrounding (x_0,y_0)
-        xMin = max((ceil(partitionNumber*(x_0-rObs))/partitionNumber),1/partitionNumber);
-        yMin = max((ceil(partitionNumber*(y_0-rObs))/partitionNumber),1/partitionNumber);
-        xMax = min((ceil(partitionNumber*(x_0+rObs))/partitionNumber),sides);
-        yMax = min((ceil(partitionNumber*(y_0+rObs))/partitionNumber),sides);
-        for x = xMin : 1/partitionNumber : xMax % iterate through x values in the square
-            for y = yMin : 1/partitionNumber : yMax % iterate through y values in the square
-                if sqrt((x-x_0)^2 + (y-y_0)^2) <= rObs % check if (x,y) is in the circle of observation
-                    cellPoints = addToArray(cellPoints,x,y);
-                end
-            end
-        end
+numAgents = size(agentPositions,1);
+agentPoints = cell(numAgents,1);
+[X, Y] = meshgrid(1:sides*partitions, 1:sides*partitions);
+% Generate a list of all points for rangesearch
+allPoints = [reshape(X, [(sides*partitions)^2 1]) ...
+    reshape(Y, [(sides*partitions)^2 1])]/partitions;
+% For each commCell
+for iComm = 1:size(commCells,1)
+    commCell = commCells{iComm};
+    [idx, dist] = rangesearch(allPoints, agentPositions(commCell,:), rObs);
+    % sortedIndexes formats indexes, distance, and agent # in an m-by-3
+    % matrix to sort by distance and retain info about the point and agent
+    % it belongs to
+    totalSize = sum(cellfun(@numel,idx));
+    % Pre-allocate for speed
+    sortedIndexes = zeros(totalSize,3);
+    % Populate first agent before loop
+    sortedIndexes(1:size(idx{1},2),:) = [idx{1}' dist{1}' ones(size(idx{1},2),1)];
+    s = size(idx{1},2);
+    for i = 2:size(commCell,1)
+        e = size(idx{i},2);
+        sortedIndexes(s+1:s+e,:) = [idx{i}' dist{i}' i*ones(size(idx{i},2),1)];
+        s = s + e;
     end
-    for j = 1 : size(cellPoints,1) % iterate over each point in each cell
-            x = cellPoints(j,1);
-            y = cellPoints(j,2);
-            minAgentNum = coms{1,i}(1); 
-            x_0 = agentPositions(minAgentNum,1);
-            y_0 = agentPositions(minAgentNum,2);
-            minimum = distanceBetween(x_0,y_0,x,y,E(minAgentNum));
-            for k = 2 : size(coms{1,i},1) % iterate over the agents in that cell
-                agentNum = coms{1,i}(k);
-                x_0 = agentPositions(agentNum,1);
-                y_0 = agentPositions(agentNum,2);
-                if distanceBetween(x_0,y_0,x,y,E(agentNum)) < minimum
-                    minimum = distanceBetween(x_0,y_0,x,y,E(agentNum));
-                    minAgentNum = agentNum;
-                end
-            end
-            agentPoints{1,minAgentNum} = addToArray(agentPoints{1,minAgentNum},x,y);
+    % Sort rows by distance in column 2
+    sortedIndexes = sortrows(sortedIndexes,2);
+    % Remove duplicates
+    [~, iKeep, ~] = unique(sortedIndexes(:,1),'first');
+    % Remove distance metric and sort by agent #
+    keepIndexes = sortrows(sortedIndexes(iKeep,[1 3]),2);
+    % Get a count of how many points each agent has
+    counts = histcounts(keepIndexes(:,2));
+    % Keep track of where we are within keepIndexes
+    lastIdx = 0;
+    for i = 1:size(commCell,1)
+        % Populate agent's cell with points from allPoints using
+        % keepIndexes that have their agent number
+        agentPoints{commCell(i)} = allPoints(keepIndexes(lastIdx+1:...
+            lastIdx+counts(i)),:);
+        lastIdx = lastIdx + counts(i);
     end
-end
 end
 
