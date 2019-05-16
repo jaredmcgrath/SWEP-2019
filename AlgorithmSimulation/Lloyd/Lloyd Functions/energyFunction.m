@@ -17,5 +17,19 @@ function deltaEnergy = energyFunction(velocity, deltaPosition)
 %     n-by-1 vector of the change in energy for each agent (negative if
 %     energy is being used)
 
-% No energy being used yet. Example to come later
-deltaEnergy = zeros(size(velocity,1),1);
+%% Constants
+% Physical mass of agents, kg
+m = 0.5;
+% Elapsed time per iteration, s
+unitTime = 30;
+% Unit(s) of space per length-sides, m
+unitSpace = 1;
+%% Example
+% This example defines energy change to be
+% E_(i+1) = E_i - (1/2)*m*v^2
+
+% Note that this velocity, v, is supposed to be in m/s
+v = vecnorm(deltaPosition,2,2)*unitSpace/unitTime;
+
+% Calculate change in energy (always negative, this could change)
+deltaEnergy = (-1/2)*m*(v.^2);

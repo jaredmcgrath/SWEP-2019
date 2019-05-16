@@ -1,5 +1,5 @@
 function [agentPositions, distanceTravelled, energy] = moveAgents(agentPositions,...
-    centroids, energy, velocityType, maxVelocity, scaleFactor)
+    centroids, sides, energy, velocityType, maxVelocity, scaleFactor)
 %% moveAgents
 % Moves each agent towards its assigned centroid
 % 
@@ -8,6 +8,8 @@ function [agentPositions, distanceTravelled, energy] = moveAgents(agentPositions
 %     n-by-2 vector of the x, y positions for n agents before moving
 %   centroids
 %     n-by-2 vector of the x, y centroid locations that agents move towards
+%   sides
+%     Side length of the arena
 %   energy
 %     n-by-1 vector of agent energy before moving
 %   velocityType
@@ -48,6 +50,9 @@ else
 end
 % Get the change in position from velocityFunction
 deltaPosition = velocityFunction(direction, velocity);
+% Make sure agents aren't out of bounds by reducing deltaPosition
+deltaPosition(agentPositions+deltaPosition>sides) = 0;
+deltaPosition(agentPositions+deltaPosition<0) = 0;
 % Update agentPositions
 agentPositions = agentPositions + deltaPosition;
 % Get the change in energy from energyFunction

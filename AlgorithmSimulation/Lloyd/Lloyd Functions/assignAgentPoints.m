@@ -53,7 +53,7 @@ for iComm = 1:size(commCells,2)
     % Remove distance metric and sort by agent #
     keepIndexes = sortrows(sortedIndexes(iKeep,[1 3]),2);
     % Get a count of how many points each agent has
-    counts = histcounts(keepIndexes(:,2));
+    counts = histcounts(keepIndexes(:,2),1:size(commCell,1)+1);
     % Keep track of where we are within keepIndexes
     lastIdx = 0;
     for i = 1:size(commCell,1)
