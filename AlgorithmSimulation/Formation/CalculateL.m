@@ -9,16 +9,7 @@ function [L] = CalculateL(A)
 %   L -- Laplacian Matrix
 
 %% Function Code
-
-num_agents = size(A,1);
-D = zeros(num_agents);
-
-for i = 1:num_agents
-    for j = 1:num_agents
-        D(i,i) = D(i,i) + A(i,j);
-    end
-end
-
+numAgents = size(A,1);
+D = diag(A*ones(numAgents,1));
 L = D - A;
 end
-
