@@ -1,0 +1,19 @@
+function [nodeDataUpdated] = UpdateNodeData(nodeData, L)
+%% UpdateNodeData
+% This function updates the nodedata for each iteration
+%   
+%   Parameters:
+%       nodeData
+%           the x, y, radii, left noise and right noise data for each node
+%           in the simulation (n x 5 matrix where n is the number of nodes)
+%       L
+%           the Laplacian matrix calculated for this iteration
+%
+%   Returns:
+%       nodeDataUpdated
+%           updated x, y, radii, left noise and right noise data that will
+%           be returned to the app.
+
+
+end
+

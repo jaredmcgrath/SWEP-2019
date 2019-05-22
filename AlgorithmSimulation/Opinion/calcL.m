@@ -4,11 +4,11 @@ function L = calcL(A)
 % 
 % Parameters:
 %   A
-%     Adjacency matrix
+%     Adjacency matrix (n x n matrix where n is the number of nodes) 
 %
 % Returns:
 %   L
-%     Laplacian Matrix
+%     Laplacian Matrix (n x n matrix where n is the number of nodes)
 
 numAgents = size(A,1);
 D = diag(A*ones(numAgents,1));

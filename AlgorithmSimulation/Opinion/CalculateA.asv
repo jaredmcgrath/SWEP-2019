@@ -6,13 +6,11 @@ function [A] = CalculateA(nodeData)
 %   Parameters:
 %       nodeData 
 %           the x, y, radius, left noise and right noise data for
-%           each node in the simulation (n x 5 matrix where n is the number
-%           of nodes)
+%           each node in the simulation
 %
 %   Returns: 
 %       A
-%           the resulting adjacency matrix (n x n matrix where n is the
-%           number of nodes)
+%           the resulting adjacency matrix
 
 %% Function Code
 nodePosition = nodeData(:,1:2);
@@ -22,8 +20,8 @@ rightNoise = nodeData(:,5);
 
 dist = pdist2(nodePosition,nodePosition);
 
-relativePosition = nodePosition(:,1)' - nodePosition(:,1);
+relativePosition
 
-A = (relativePosition <= 0 & dist <= (radii-leftNoise)) | (relativePosition >= 0 & dist <= (radii-rightNoise));
+A = dist < (radii-leftNoise) | dist < (radii-rightNoise);
 end
 
