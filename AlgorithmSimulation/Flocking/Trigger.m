@@ -1,13 +1,13 @@
-function [trigger] = Trigger(currentIteration)
-%% Trigger
-%   Trigger sequence for simualtion
+function [trigger] = trigger(iteration)
+%% trigger
+% Trigger sequence for simualtion
 %
-%   Parameters:
-%       CurrentIteration -- current iteration that the simulation is in
+% Parameters:
+%   iteration
+%     Current simulation iteration
 %
-%   Return:
-%       trigger -- 1 is trigger activated, 0 if not
+% Return:
+%   trigger
+%     1 is trigger activated, 0 otherwise
 
 trigger = 1;
-end
-
