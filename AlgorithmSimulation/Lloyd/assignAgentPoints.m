@@ -1,8 +1,8 @@
 function agentPoints = assignAgentPoints(agentPositions, commCells, sides,...
     partitions,rObs)
-%% agentPoints
+%% assignAgentPoints
 % Determine which points within an agent's observed region it is assigned.
-% Agents in the same communication cell will not be assigned the same
+% Agents in  the same communication cell will not be assigned the same
 % point. However, agents who cannot communicate may cover the same point(s)
 %
 % Parameters:
