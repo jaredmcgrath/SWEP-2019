@@ -1,7 +1,8 @@
 function [agentPositions, distanceTravelled, energy] = moveAgents(agentPositions,...
     centroids, sides, energy, velocityType, maxVelocity, scaleFactor)
 %% moveAgents
-% Moves each agent towards its assigned centroid
+% Moves each agent towards its assigned centroid. Must ensure agents don't
+% move out of bounds.
 % 
 % Parameters:
 %   agentPositions
