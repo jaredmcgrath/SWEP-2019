@@ -1,0 +1,33 @@
+%% ANIMATED LINE PLOT
+% We are using a script file instead of a .mlx file becasue in the .mlx
+% file only the final plot would be displayed instead of the animation, and
+% the whole purpose of this tutorial is how to create an animated line.
+
+%% EXPLAINATION
+% Suppose that you want to create a plot that graudally updates as the
+% program runs. To do this, you can use the animatedline function in Matlab
+% below is some sample code on how to use the animated line function
+
+%% CODE
+
+f = animatedline;
+axis([-5,5,-5,5])
+
+grid on;
+
+t1 = linspace(0,10,1000);
+x1 = sqrt(t1).*cos(t1);
+y1 = sqrt(t1).*sin(t1);
+
+for i = 1:1000
+    addpoints(f,x1(i),y1(i));
+    drawnow 
+end
+
+syms x(t) y(t)
+
+x(t) = sqrt(t)*cos(t);
+y(t) = sqrt(t)*sin(t);
+
+for i
+
