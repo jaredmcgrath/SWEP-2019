@@ -1,4 +1,4 @@
-function response = sendInstruction(xbeeSerial, instruction, botTag, data)
+function response = sendInstruction(xbeeSerial, numBots, instruction, botTag, data)
 %% sendInstruction
 % Translates a text instruction to proper format specified in communication
 % protocol. Transmits that command and waits for a response, if applicable.
@@ -8,6 +8,8 @@ function response = sendInstruction(xbeeSerial, instruction, botTag, data)
 %   xbeeSerial
 %     Serial port object for the XBee. The serial port should be closed
 %     upon calling sendInstruction
+%   numBots
+%     Number of total bots in use
 %   instruction
 %     String instruction. Must match one of the instructions in the
 %     communication protocol
@@ -32,9 +34,9 @@ insHex = struct('GO',0,'GET_X',1,'GET_Y',2,'GET_A',3,'GET_T_L',4,'GET_T_R',...
     5,'GET_B',6,'STOP',7,'SET_X',18,'SET_Y',20,'SET_H',22,'SET_M_L',24,...
     'SET_M_R',26,'G_GO',224,'G_RESET',225,'G_CONF',226);
 
-% If its a global command, nargin = 2, so set bot=0
-if nargin==2
-    id = 0;
+% If its a global command, nargin = 3, so set bot=7 (all bots)
+if nargin==3
+    id = 7;
 else
     id = getfield(tagId, botTag);
 end
@@ -48,23 +50,23 @@ switch instruction
     % TODO: Change G_CONF behaviour to something responsive/useful
     case 'G_CONF'
         fwrite(xbeeSerial,B0);
-        % Wait until 3 responses have been recevied
-        disp(fread(xbeeSerial,3,'uint8'));
+        % Wait until numBots responses have been recevied
+        disp(fread(xbeeSerial,numBots,'uint8'));
     % Instructions that require a response
     case {'GET_T_L','GET_T_R','GET_B'}
         fwrite(xbeeSerial,B0);
         rslt = fread(xbeeSerial,2,'uint8');
-        response = bitor(bitshift(rslt(1),8),rslt(2));
+        response = bitor(bitshift(bitand(rslt(1),31),8),rslt(2));
     case 'GET_A'
         fwrite(xbeeSerial,B0);
         rslt = fread(xbeeSerial,2,'uint8');
         % Convert angle to radians
-        response = bitor(bitshift(rslt(1),8),rslt(2))*pi/180;
+        response = bitor(bitshift(bitand(rslt(1),31),8),rslt(2))*pi/180;
     case {'GET_X','GET_Y'}
         fwrite(xbeeSerial,B0);
         rslt = fread(xbeeSerial,2,'uint8');
         % Convert back to decimal
-        response = bitor(bitshift(rslt(1),8),rslt(2))/100;
+        response = bitor(bitshift(bitand(rslt(1),31),8),rslt(2))/100;
     % 2 byte instructions, no response
     case {'SET_X','SET_Y'}
         % Keep 2 decimals, truncate remainder

@@ -3,15 +3,15 @@ void checkForIns() {
   byte insId;
   if (XBee.available()) {
     data = XBee.read();
-    #if DEBUG
-    Serial.println("Instruction received:");
-    Serial.println(data, HEX);
-    #endif
     insId = getInsId(data);
+    #if DEBUG
+    Serial.print("Instruction received: "); Serial.println(data, HEX);
+    Serial.print("ID: "); Serial.println(insId);
+    #endif
     // If instuction ID is for this bot, or it is a global instruction
     if (insId == id || insId == ALL_AGENTS) {
-      // Truncate the ID bits to 0
-      executeIns(data);
+      // Mask the instruction so ID bits are 0
+      executeIns(data & 0x1F);
     }
     // If the instruction is 2 bytes, cycle the XBee until second byte is read and discarded
     else if (data & 0x10) {
@@ -44,6 +44,9 @@ void executeIns(byte ins) {
   if ((ins & 0x10) && (getInsId(ins) != ALL_AGENTS)) {
     msb = ins & 0x1;
     ins = ins & 0x1E;
+    #if DEBUG
+      Serial.print("2 byte instruction. Actual ins: "); Serial.println(ins);
+    #endif
   }
   switch (ins) {
     case 0x00:
@@ -99,12 +102,18 @@ void executeIns(byte ins) {
       dontGo();
       break;
     default:
+      #if DEBUG
+        Serial.println("Bad instruction");
+      #endif
       badResponse();
       break;
   }
 }
 
 void go() {
+  #if DEBUG
+    Serial.println("Going");
+  #endif
   driveArdumoto(MOTOR_L, leftInput);
   driveArdumoto(MOTOR_R, rightInput);
 }
@@ -119,7 +128,6 @@ void badResponse() {
 }
 
 void confirm() {
-  XBee.write('K');
   XBee.write((id<<5) | 0x1F);
 }
 
@@ -158,14 +166,18 @@ void getAngle() {
 }
 
 void getLeftTicks() {
-  message[0] = (id<<5) | (leftEncoder>>8 & 0x1F);
-  message[1] = leftEncoder & 0xFF;
+  int ticks = leftEncoder - lastLeftTicks;
+  lastLeftTicks = leftEncoder;
+  message[0] = (id<<5) | (ticks>>8 & 0x1F);
+  message[1] = ticks & 0xFF;
   XBee.write((char*)message, 2);
 }
 
 void getRightTicks() {
-  message[0] = (id<<5) | (rightEncoder>>8 & 0x1F);
-  message[1] = rightEncoder & 0xFF;
+  int ticks = rightEncoder - lastRightTicks;
+  lastRightTicks = rightEncoder;
+  message[0] = (id<<5) | (ticks>>8 & 0x1F);
+  message[1] = ticks & 0xFF;
   XBee.write((char*)message, 2);
 }
 

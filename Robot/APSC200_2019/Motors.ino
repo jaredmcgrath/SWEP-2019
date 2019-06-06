@@ -15,6 +15,9 @@ void setupArdumoto(){
 
 // driveArdumoto sets the motor at a certain speed, negative speeds moves it backwards and if the robot is Shannon, then it reverses the speed of the wheel
 void driveArdumoto(byte motor, int spd){ 
+  #if DEBUG
+    Serial.print("Motor "); Serial.print(motor); Serial.print(" at speed "); Serial.println(spd);
+  #endif
   int dir = (spd >= 0) ? 1 : 0;
   spd = (spd >= 0) ? spd : -1*spd;
 //  if (agentTag == 'S'){

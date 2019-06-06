@@ -73,9 +73,9 @@ void getHeading(){
   heading = (float) ((int)(atan2(mag.magnetic.y, mag.magnetic.x)*1000) % (int)(PI*1000))/1000.0;
   theta = (float) ((int)((heading - baseline)*1000) % (int)(PI*1000))/1000.0;
 
-  #if DEBUG
-  Serial.println("Heading, theta:");
-  Serial.println(heading);
-  Serial.println(theta);
-  #endif
+//  #if DEBUG
+//  Serial.println("Heading, theta:");
+//  Serial.println(heading);
+//  Serial.println(theta);
+//  #endif
 }

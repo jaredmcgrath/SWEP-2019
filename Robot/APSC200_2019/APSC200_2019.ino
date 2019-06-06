@@ -36,6 +36,7 @@ bool isHeadingSet = false;
 /////////////////////////////// Encoder Variables ///////////////////////////////////////////////
 int oldLeftEncoder = 0, oldRightEncoder = 0; // Stores the encoder value from the loop prior to estimate x, y position
 int leftEncoder = 0, rightEncoder = 0; // Stores the encoder values for the current loop
+int lastLeftTicks = 0, lastRightTicks = 0; // Ticks upon last call of getLeftTicks/getRightTicks
 
 /////////////////////////////// Position Variables ///////////////////////////////////////////////
 float leftRads = 0, rightRads = 0; // Stores the left and right radians of the wheels (from encoder values)
@@ -55,7 +56,7 @@ float loopTime;
  * ID's should be numbered 0-6 inclusively
  */
 byte message[2];
-byte id = 0;
+byte id = 1;
 #define ALL_AGENTS 7
 
 ////////////////////////////////////////////////////////// Object Declarations //////////////////////////////////////////////////////////
@@ -161,10 +162,10 @@ void botLoop(){
   getHeading();
   positionCalc(); //update the position of the robot
   checkForIns();
-  #if DEBUG
-  Serial.print(F("Angle in Degrees ")); Serial.println(theta); 
-  Serial.print(F("Heading in Degrees ")); Serial.println(heading); 
-  #endif   
+//  #if DEBUG
+//  Serial.print(F("Angle in Degrees ")); Serial.println(theta); 
+//  Serial.print(F("Heading in Degrees ")); Serial.println(heading); 
+//  #endif   
   delay(20);
 }
 

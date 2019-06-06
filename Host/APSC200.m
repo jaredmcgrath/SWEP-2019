@@ -4,8 +4,6 @@ clear
 clc
 
 %% TO DO
-% - Wheel calibration
-%    - Maybe save last calibration in a config file?
 % - Make a config file for all settings instead of hard-coding them
 
 %% Variables in this code that are affected by variables in the Arduino code
@@ -61,34 +59,25 @@ debug = true;
 
 %% XBEE SETUP
 % Set up the Xbee connection
-xbeeSerial = serial('COM8','Terminator','CR', 'Timeout', 2);
+xbeeSerial = serial('COM8','Terminator','CR', 'Timeout', 5);
 % END XBEE SETUP
 
 %% BOT SETUP
 % Call the initializeBotState to get list of bots being worked with, and
 % their states
-[position, tagString, heading] = initializeBotState(config);
+[position, tags, heading] = initializeBotState(config);
 % Send initial positions to bots
-sendInitialState(xbeeSerial, position, tagString, heading);
+sendInitialState(xbeeSerial, position, tags, heading);
+disp('Bots setup successfully')
+% END BOT SETUP
 
 %% WHEEL CALIBRATION
 %See if the user wants to calibrate the robots wheels
-calibrate = input('Would you like to calibrate the wheels (y/n)? ', 's');
-if (calibrate == 'Y' || calibrate == 'y')
-    fopen(xbeeSerial);
-    fwrite(xbeeSerial,'C');
-    fwrite(xbeeSerial,'C');
-    fwrite(xbeeSerial,'C');
-    fclose(xbeeSerial);
-    for i=1:length(bots)
-        [leftInputSlope, leftInputIntercept, rightInputSlope, rightInputIntercept]...
-            = WheelCalibration(xbeeSerial, bots(i), botTagLower(i));
-    end
+if strcmpi(input('Calibrate bots? (y/n) ', 's'), 'y')
+    [slope, intercept] = calibrateWheels(xbeeSerial, tags);
 else
-    leftInputSlope = 13;
-    leftInputIntercept = 90;
-    rightInputSlope = 13;
-    rightInputIntercept = 90;
+    slope = 13*ones(size(tags,2),2);
+    intercept = 90*ones(size(tags,2),2);
 end
 % END WHEEL CALIBRATION
 
