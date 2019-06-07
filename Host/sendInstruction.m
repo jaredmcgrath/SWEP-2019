@@ -40,6 +40,7 @@ if nargin==3
 else
     id = getfield(tagId, botTag);
 end
+
 % Generate ID-instruction part of B0
 B0 = bitor(bitshift(uint8(id),5), uint8(getfield(insHex,instruction)));
 fopen(xbeeSerial);

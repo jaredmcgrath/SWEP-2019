@@ -18,6 +18,8 @@ function sendInitialState(xbeeSerial, botPositionArray, tags, heading)
 %
 % Returns:
 %   N/A
+
+%% Main Code
 numBots = length(tags);
 
 for i = 1:numBots

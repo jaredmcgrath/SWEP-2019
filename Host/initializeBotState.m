@@ -35,8 +35,7 @@ for i = 0:tagNodes.getLength-1
     validBotString = cat(2,validBotString,char(bot.getFirstChild.getData));
 end
 
-tags = input('Enter bot tags: ', 's');
-botPositionArray = zeros(length(tags), 2);
+% Input the staritng cooridinates for each robot
 disp('Input coordinates in meters to 2 decimal places')
 for iBot = 1:length(tags)
     botPositionArray(iBot,1) = input(['Enter x for ' tags(iBot) ': ']);
@@ -50,4 +49,6 @@ for iBot = 1:length(tags)
         botPositionArray(iBot,2) = input(['Enter y for ' tags(iBot) ': ']);
     end
 end
+
+% Input the heading in degrees for the x-axis for the coordinate system
 heading = input('Input heading of positive x-axis in degrees: ');
