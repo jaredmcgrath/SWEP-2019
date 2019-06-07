@@ -19,9 +19,12 @@ recompilePingBeaconCode = false;
 enableDebuggingRPi = false; 
 % Enable debugging for this script and related functions
 debug = true;
+% The config file name
+configFileName = 'config.xml';
 
 % Read config file
- config = xmlread('config.xml');
+[maxX, maxY, validTags, tagIdStruct, instructionStruct, slope, intercept]...\
+    = parseConfig(configFileName);
 % allBots = configDOM.getElementsByTagName('tag');
 % for i = 0:allBots.getLength-1
 %     currentBot = allBots.item(i);
@@ -72,12 +75,12 @@ disp('Bots setup successfully')
 % END BOT SETUP
 
 %% WHEEL CALIBRATION
-%See if the user wants to calibrate the robots wheels
+% See if the user wants to calibrate the robots wheels
+% If not, the values from config will be used
 if strcmpi(input('Calibrate bots? (y/n) ', 's'), 'y')
     [slope, intercept] = calibrateWheels(xbeeSerial, tags);
-else
-    slope = 13*ones(size(tags,2),2);
-    intercept = 90*ones(size(tags,2),2);
+    % Update config file to the new values
+    saveWheelConfig(configFileName, slope, intercept);
 end
 % END WHEEL CALIBRATION
 
