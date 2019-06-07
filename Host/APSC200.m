@@ -1,3 +1,38 @@
+%% APSC 200: Main Robot Script
+% This is the main program for running the robots in the desired group
+% dynamics. This script is brokendown into several functions that are 
+% detailed below. The user defined external functions that are called in
+% each section of the code required to run the overall script are also 
+% described below. 
+
+%   - Runtime Parameters
+%   - Xbee Setup
+%   - Robot Setup
+%       -> initializeBotState.m
+%       -> sendInitialState.m
+%           => sendInstruction.m
+%   - Wheel Calibration
+%       -> calibrateWheels.m
+%           => sendInstruction.m
+%   - Main Loop Variable Declaration
+%       -> PositionCalc.m
+%           => pingBeacon.m
+%           => getAllDataXbee.m
+%           => getSensorsXbee.m
+%           => filterBeaconData.m
+%           => EKF.m
+%       -> getNextPosition.m
+%           => Flocking.m
+%           => Formation.m
+%           => Krause.m
+%           => Deployment.m
+%   - Main Loop
+%       -> checkPosition.m
+%
+%       -> getNextPosition.m
+%       -> AdjustPosition.m
+%       -> PositionCalc.m
+
 %Clear the workspace to start the program 
 close all
 clear
@@ -6,17 +41,19 @@ clc
 %% TO DO
 % - Make a config file for all settings instead of hard-coding them
 
-%% Variables in this code that are affected by variables in the Arduino code
-% time_step (in EKF) should be the same as movementDuration in the 'duino 
-% code 
-% pingBeaconDelay is dependent on BEACON_TIMEOUT_THRESHOLD in the 'duino
-% code
-
 %% RUNTIME PARAMETERS
+
+% Variables in code that are affected by variables in the Arduino code
+%   - time_step ->(in EKF) should be the same as movementDuration in the
+%           Arduino code 
+%   - pingBeaconDelay -> dependent on BEACON_TIMEOUT_THRESHOLD in the 
+%           Arduino code
+
 % Recompiles pingBeacon.c on the RPi once during setup. Do this if you have
 % made changes to pingBeacon.c
 recompilePingBeaconCode = false;
 enableDebuggingRPi = false; 
+
 % Enable debugging for this script and related functions
 debug = true;
 % The config file name
@@ -30,9 +67,11 @@ configFileName = 'config.xml';
 %     currentBot = allBots.item(i);
 %     disp(char(currentBot.getFirstChild.getData))
 % end
+
 % END RUNTIME PARAMETERS
 
-%% OLD LOCALIZATION SETUP (remove or revise, not functional)
+%% OLD LOCALIZATION SETUP 
+% (remove or revise, not functional)
 %rpi = raspi('130.15.101.192','pi','swep2018');      % New RPi 3
 %rpi = raspi('130.15.101.119','pi','apsc200');      % Old RPi 1
 % Where the relevant files for firing the beacons are stored on the RPi
@@ -63,6 +102,7 @@ configFileName = 'config.xml';
 %% XBEE SETUP
 % Set up the Xbee connection
 xbeeSerial = serial('COM8','Terminator','CR', 'Timeout', 5);
+
 % END XBEE SETUP
 
 %% BOT SETUP
@@ -72,6 +112,7 @@ xbeeSerial = serial('COM8','Terminator','CR', 'Timeout', 5);
 % Send initial positions to bots
 sendInitialState(xbeeSerial, position, tags, heading);
 disp('Bots setup successfully')
+
 % END BOT SETUP
 
 %% WHEEL CALIBRATION
@@ -82,10 +123,10 @@ if strcmpi(input('Calibrate bots? (y/n) ', 's'), 'y')
     % Update config file to the new values
     saveWheelConfig(configFileName, slope, intercept);
 end
+
 % END WHEEL CALIBRATION
 
-%% 
-%Create Sensor and Position variables for each robot
+%% Create Sensor and Position variables for each robot
 position = zeros(length(bots), 3);
 oldPosition = position;
 % Estimate/predict next position (depending on if we localize or not)
@@ -136,7 +177,7 @@ while (true)
     fclose(xbeeSerial);
 
     %%%%%NAVIGATION AND ESTIMATION SECTION%%%%%        
-    %calculate the new position of the robot
+    % calculate the new position of the robot
     oldPosition = position;
     [position, errorCovMat] = PositionCalc(botTagLower, beaconLocations, ...
         errorCovMat, xbeeSerial, rpi, localizeThisIteration, beaconGPIO, ...
