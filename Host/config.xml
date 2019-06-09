@@ -4,6 +4,8 @@
 		<maxX>5.12</maxX>
 		<maxY>5.12</maxY>
 	</boundary>
+    
+    <maxError>0.05</maxError>
 	
 	<botTags>
 		<bot>
