@@ -1,9 +1,9 @@
 %% APSC 200: Main Robot Script
 % This is the main program for running the robots in the desired group
 % dynamics. This script is brokendown into several functions that are 
-% detailed below. The user defined external functions that are called in
-% each section of the code required to run the overall script are also 
-% described below. 
+% detailed below. The user defined external functions (to two levels) that
+% are called in each section of the code required to run the overall script
+% are also described below. 
 
 %   - Runtime Parameters
 %   - Xbee Setup
@@ -28,10 +28,18 @@
 %           => Deployment.m
 %   - Main Loop
 %       -> checkPosition.m
-%
 %       -> getNextPosition.m
+%           => Flocking.m
+%           => Formation.m
+%           => Krause.m
+%           => Deployment.m
 %       -> AdjustPosition.m
 %       -> PositionCalc.m
+%           => pingBeacon.m
+%           => getAllDataXbee.m
+%           => getSensorsXbee.m
+%           => filterBeaconData.m
+%           => EKF.m
 
 %Clear the workspace to start the program 
 close all
@@ -123,29 +131,44 @@ end
 
 % END WHEEL CALIBRATION
 
-%% Create Sensor and Position variables for each robot
+%% CREATE SENSOR AND POSITION VARIABLES FOR EACH ROBOT
+
+% Algorithm Selection
+% Display possible options for users to pick from. User selects one of the
+% options. Option selected is saved to the algorithm variable
+load('algorithmOptions.mat')
+disp('Formation Options')
+for i = 1:size(algorithmOptions,2)
+    disp(cell2mat(algorithmOptions(i)));
+end
+algorithm = input('Enter Number for Corresponding Formation Type: ');
+
+% Allows user to enter parameters unique to each algorithm
+algorithmParameters = algorithmSettings(algorithm, tags);
+
 position = zeros(length(bots), 3);
 oldPosition = position;
+
 % Estimate/predict next position (depending on if we localize or not)
 [position, errorCovMat] = PositionCalc(botTagLower, beaconLocations,...
     errorCovMat, xbeeSerial, rpi, localizeThisIteration, beaconGPIO,...
     pingBeaconPath, pingBeaconDelay, debug, oldPosition);
 
-nextPosition = getNextPosition(algorithm, bots, position);
+nextPosition = getNextPosition(algorithm, bots, position, algorithmParameters);
 error = zeros(3*length(bots),1);
 
 
 exitCounter = 0;
 index = 1;
 
-%% Main loop
+%% MAIN LOOP
 while (true) 
     localizeThisIteration = true;
     %see if any of the robots are its next position
-    for i= 1:length(bots)
+    for i = 1:length(bots)
         check = checkPosition(position(i,:),nextPosition(i,:));
         if(check == true)
-            nextPosition = getNextPosition(algorithm, bots, position);
+            nextPosition = getNextPosition(algorithm, bots, position, algorithmParameters);
         end
         %check to see if the robot's new position is its current position
         check = checkPosition(position(i,:),nextPosition(i,:));

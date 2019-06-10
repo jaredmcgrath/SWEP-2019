@@ -1,6 +1,6 @@
 function [LaplacianMatrix] = getLaplacianMatrix(adjMatrix,DMatrix)
-%Calculate the Laplacian matrix of the system from the adjacency and D
-%matrices
+% Calculate the Laplacian matrix of the system from the adjacency and D
+% matrices
 
 LaplacianMatrix = zeros(size(adjMatrix, 1), size(adjMatrix, 1));
 for i = 1:size(adjMatrix, 1)
