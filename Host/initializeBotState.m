@@ -1,4 +1,4 @@
-function [botPositionArray, tags, heading] = initializeBotState(config)
+function [positions, tags, heading] = initializeBotState(config)
 %% initializeBotState
 % Query user for:
 %   - Bot tags
@@ -6,13 +6,11 @@ function [botPositionArray, tags, heading] = initializeBotState(config)
 %   - Heading of the positive x-axis
 %
 % Parameters:
-%   maxX
-%     The maximum x value boundary in meters, usually 5.12
-%   maxY
-%     The maximum y value boundary in meters, usually 5.12
+%   config
+%     The config struct (see parseConfig.m)
 %
 % Returns:
-%   botPositionArray
+%   positions
 %     n-by-2 array of positions for n bots. Formatted [x1,y1;x2,y2;...]
 %   tags
 %     Character vector of the bots' tags that are being used. Should only
@@ -21,32 +19,25 @@ function [botPositionArray, tags, heading] = initializeBotState(config)
 %   heading
 %     The heading of the positive x-axis in degrees
 
-% Extract info from config
-maxXNodes = config.getElementsByTagName('maxX');
-maxXNode = maxXNodes.item(0);
-maxX = str2num(maxXNode.getFirstChild.getData);
-maxYNodes = config.getElementsByTagName('maxY');
-maxYNode = maxYNodes.item(0);
-maxY = str2num(maxYNode.getFirstChild.getData);
-tagNodes = config.getElementsByTagName('tag');
-validBotString = '';
-for i = 0:tagNodes.getLength-1
-    bot = tagNodes.item(i);
-    validBotString = cat(2,validBotString,char(bot.getFirstChild.getData));
+% Get tags being used
+tags = upper(input('Enter bot tags being used','s'));
+while isempty(tags) || ~arrayfun(@(i) contains(config.validTags,tags(i)), length(tags))
+    disp(['Must be any combination of: ' config.validTags]);
+    tags = upper(input('Enter bot tags being used','s'));
 end
-
+positions = zeros(length(tags),2);
 % Input the staritng cooridinates for each robot
 disp('Input coordinates in meters to 2 decimal places')
-for iBot = 1:length(tags)
-    botPositionArray(iBot,1) = input(['Enter x for ' tags(iBot) ': ']);
-    while (botPositionArray(iBot,1) > maxX)
-        disp(['Must have x less than ' maxX])
-        botPositionArray(iBot,1) = input(['Enter x for ' tags(iBot) ': ']);
+for i = 1:length(tags)
+    positions(i,1) = input(['Enter x for ' tags(i) ': ']);
+    while (positions(i,1) > config.maxX)
+        disp(['Must have x less than ' num2str(config.maxX)]);
+        positions(i,1) = input(['Enter x for ' tags(i) ': ']);
     end
-    botPositionArray(iBot,2) = input(['Enter y for ' tags(iBot) ': ']);
-    while (botPositionArray(iBot,2) > maxY)
-        disp(['Must have y less than ' maxY])
-        botPositionArray(iBot,2) = input(['Enter y for ' tags(iBot) ': ']);
+    positions(i,2) = input(['Enter y for ' tags(i) ': ']);
+    while (positions(i,2) > config.maxY)
+        disp(['Must have y less than ' num2str(config.maxY)]);
+        positions(i,2) = input(['Enter y for ' tags(i) ': ']);
     end
 end
 

@@ -1,63 +1,118 @@
-function [maxX, maxY, validBotString, botTagId, instructionVal, wheels] =...
-    parseConfig(path)
+function config = parseConfig(path)
 %% parseConfig
-% Parses the file supplied in path and returns all values in proper format
+% Parses the file supplied in path and returns all values in proper format,
+% in a struct
 %
 % Parameters:
 %   path
 %     The path of the config file (usually just config.xml)
 %
 % Returns:
-%   maxX
-%     The maximum x value boundary in meters, usually 5.12
-%   maxY
-%     The maximum y value boundary in meters, usually 5.12
-%   validBotString
-%     A string, where each character is that of one bot
-%   botTagId
-%     A struct containing the numerical ID of each bot corresponding to
-%     their character tag
-%   instructionVal
-%     A struct containing the numerical value of each instruction
-%     corresponding to the string value
-%   wheels
-%     An n-by-2 matrix containing slope and intercept for each of the n
-%     bots
+%   config
+%     Struct with the following fields:
+%      maxX
+%       The maximum x value boundary in meters, usually 5.12
+%      maxY
+%       The maximum y value boundary in meters, usually 5.12
+%      maxError
+%        Maximum allowable error when considering if an agent has reached a
+%        desired location
+%      validTags
+%       A string, where each character is that of one bot
+%      tagIdStruct
+%       A struct containing the numerical ID of each bot corresponding to
+%       their character tag
+%      insStruct
+%       A struct containing the numerical value of each instruction
+%       corresponding to the string value
+%      slope
+%       n-by-2 matrix of slopes in [left right; left right; ... ] format,
+%       where n is length of allTags
+%      intercept
+%       n-by-2 matrix of intercepts in [left right; left right; ... ] format,
+%       where n is length of allTags
 
-config = xmlread(path);
-maxXNodes = config.getElementsByTagName('maxX');
-maxXNode = maxXNodes.item(0);
-maxX = str2double(maxXNode.getFirstChild.getData);
+configDOM = xmlread(path);
+% Get maxX
+maxXNode = configDOM.getElementsByTagName('maxX');
+maxXNode = maxXNode.item(0);
+maxX = str2double(maxXNode.getTextContent());
 
-maxYNodes = config.getElementsByTagName('maxY');
-maxYNode = maxYNodes.item(0);
-maxY = str2double(maxYNode.getFirstChild.getData);
+% Get maxY
+maxYNode = configDOM.getElementsByTagName('maxY');
+maxYNode = maxYNode.item(0);
+maxY = str2double(maxYNode.getTextContent());
 
-tagNodes = config.getElementsByTagName('bot');
-validBotString = char();
-botTagId = struct();
+% Get maxError
+maxErrNode = configDOM.getElementsByTagName('maxError');
+maxErrNode = maxErrNode.item(0);
+maxError = str2double(maxErrNode.getTextContent());
+
+% Get bot tags/ids
+tagNodes = configDOM.getElementsByTagName('bot');
+validTags = char();
+tagIdStruct = struct();
 for i = 0:tagNodes.getLength-1
     bot = tagNodes.item(i);
     tag = bot.getElementsByTagName('tag');
     tag = tag.item(0);
-    tag = char(tag.getFirstChild.getData);
-    validBotString = [validBotString tag];
+    tag = char(tag.getTextContent());
+    validTags = [validTags tag];
     id = bot.getElementsByTagName('value');
     id = id.item(0);
-    id = int8(str2double(id.getFirstChild.getData));
-    botTagId.(tag) = id;
+    id = int8(str2double(id.getTextContent()));
+    tagIdStruct.(tag) = id;
 end
 
-insNodes = config.getElementsByTagName('instruction');
-instructionVal = struct();
+% Get instructions
+insNodes = configDOM.getElementsByTagName('instruction');
+insStruct = struct();
 for i = 0:insNodes.getLength-1
     ins = insNodes.item(i);
     name = ins.getElementsByTagName('name');
     name = name.item(0);
-    name = string(name.getFirstChild.getData);
+    name = string(name.getTextContent());
     value = ins.getElementsByTagName('value');
     value = value.item(0);
-    value = str2double(value.getFirstChild.getData);
-    instructionVal.(name) = value;
+    value = str2double(value.getTextContent());
+    insStruct.(name) = value;
 end
-disp('test')
+
+% Get wheels params
+slope = zeros(length(validTags), 2);
+intercept = zeros(length(validTags), 2);
+% Left wheels
+leftNodes = configDOM.getElementsByTagName('leftWheel');
+for i = 0:leftNodes.getLength-1
+    wheel = leftNodes.item(i);
+    % The slope node for this wheel
+    s = wheel.getElementsByTagName('slope');
+    s = s.item(0);
+    s = str2double(s.getTextContent());
+    slope(i+1, 1) = s;
+    % The intercept node for this wheel
+    in = wheel.getElementsByTagName('intercept');
+    in = in.item(0);
+    in = str2double(in.getTextContent());
+    intercept(i+1, 1) = in;
+end
+% Right wheels
+rightNodes = configDOM.getElementsByTagName('rightWheel');
+for i = 0:rightNodes.getLength-1
+    wheel = rightNodes.item(i);
+    % The slope node for this wheel
+    s = wheel.getElementsByTagName('slope');
+    s = s.item(0);
+    s = str2double(s.getTextContent());
+    slope(i+1, 2) = s;
+    % The intercept node for this wheel
+    in = wheel.getElementsByTagName('intercept');
+    in = in.item(0);
+    in = str2double(in.getTextContent());
+    intercept(i+1, 2) = in;
+end
+
+% Put all values into a struct
+config = struct('maxX',maxX,'maxY',maxY,'maxError',maxError,'validTags',...
+    validTags,'tagIdStruct',tagIdStruct,'insStruct',insStruct,'slope',...
+    slope,'intercept',intercept);

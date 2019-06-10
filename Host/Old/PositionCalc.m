@@ -75,6 +75,7 @@ else
     positionPrediction = getSensorsXbee(botTagLower, XbeeSerial);
 end
 
+
 if (debug)
     disp("Position prediction: ");
     disp(positionPrediction);

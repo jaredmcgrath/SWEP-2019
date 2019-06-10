@@ -61,18 +61,15 @@ clc
 % made changes to pingBeacon.c
 recompilePingBeaconCode = false;
 enableDebuggingRPi = false; 
-
 % Enable debugging for this script and related functions
 debug = true;
 
-% Read config file
- config = xmlread('config.xml');
-% allBots = configDOM.getElementsByTagName('tag');
-% for i = 0:allBots.getLength-1
-%     currentBot = allBots.item(i);
-%     disp(char(currentBot.getFirstChild.getData))
-% end
-
+% The config file name
+configFileName = 'config.xml';
+% Read config file into a struct
+config = parseConfig(configFileName);
+% Filename of the .mat containing the path
+pathFileName = 'agentData.mat';
 % END RUNTIME PARAMETERS
 
 %% OLD LOCALIZATION SETUP 
@@ -106,33 +103,39 @@ debug = true;
 
 %% XBEE SETUP
 % Set up the Xbee connection
-xbeeSerial = serial('COM8','Terminator','CR', 'Timeout', 5);
+config.xbee = serial('COM8','Terminator','CR', 'Timeout', 5);
 
 % END XBEE SETUP
 
 %% BOT SETUP
 % Call the initializeBotState to get list of bots being worked with, and
 % their states
-[position, tags, heading] = initializeBotState(config);
+[position, tags, xHeading] = initializeBotState(config);
 % Send initial positions to bots
-sendInitialState(xbeeSerial, position, tags, heading);
+sendInitialState(config, position, tags, xHeading);
 disp('Bots setup successfully')
 
 % END BOT SETUP
 
+%% PATH LOADING
+% Loads the paths for the agents
+path = load(pathFileName,'agentPositionHistory');
+
+% END PATH LOADING
+
 %% WHEEL CALIBRATION
-%See if the user wants to calibrate the robots wheels
+% See if the user wants to calibrate the robots wheels
+% If not, the values from config will be used
 if strcmpi(input('Calibrate bots? (y/n) ', 's'), 'y')
-    [slope, intercept] = calibrateWheels(xbeeSerial, tags);
-else
-    slope = 13*ones(size(tags,2),2);
-    intercept = 90*ones(size(tags,2),2);
+    [slope, intercept] = calibrateWheels(config,tags);
+    % Update config file to the new values
+    saveWheelConfig(configFileName, slope, intercept);
 end
 
 % END WHEEL CALIBRATION
 
 %% CREATE SENSOR AND POSITION VARIABLES FOR EACH ROBOT
-
+%{
 % Algorithm Selection
 % Display possible options for users to pick from. User selects one of the
 % options. Option selected is saved to the algorithm variable
@@ -145,66 +148,85 @@ algorithm = input('Enter Number for Corresponding Formation Type: ');
 
 % Allows user to enter parameters unique to each algorithm
 algorithmParameters = algorithmSettings(algorithm, tags);
-
-position = zeros(length(bots), 3);
-oldPosition = position;
-
-% Estimate/predict next position (depending on if we localize or not)
-[position, errorCovMat] = PositionCalc(botTagLower, beaconLocations,...
-    errorCovMat, xbeeSerial, rpi, localizeThisIteration, beaconGPIO,...
-    pingBeaconPath, pingBeaconDelay, debug, oldPosition);
-
-nextPosition = getNextPosition(algorithm, bots, position, algorithmParameters);
-error = zeros(3*length(bots),1);
-
-
-exitCounter = 0;
-index = 1;
+%}
 
 %% MAIN LOOP
-while (true) 
-    localizeThisIteration = true;
-    %see if any of the robots are its next position
-    for i = 1:length(bots)
-        check = checkPosition(position(i,:),nextPosition(i,:));
-        if(check == true)
-            nextPosition = getNextPosition(algorithm, bots, position, algorithmParameters);
-        end
-        %check to see if the robot's new position is its current position
-        check = checkPosition(position(i,:),nextPosition(i,:));
-        if(check == true)
-            exitCounter = exitCounter + 1;
-        end
-    end
-    
-    %if all of the new positions match the robots' old position, exit the
-    %program
-    if(exitCounter == length(bots))
-        break;
-    end
+% High-level overview of what should happen (tentatively)
+% - Get current robot positions
+% - Compare current positions to where they should be
+% - Apply control to put them on track
 
-    %%%%%CONTROL SECTION%%%%%
-    % Determine motor inputs based off of controller 
-  
-    AdjustPosition(xbeeSerial, bots, position, ...
-        nextPosition, index, error, leftInputSlope, leftInputIntercept, ...
-        rightInputSlope, rightInputIntercept);
-
-
-    % start all the robots to start moving after giving them motor inputs
-    fopen(xbeeSerial);
-    fwrite(xbeeSerial, '1');
-    fclose(xbeeSerial);
-
-    %%%%%NAVIGATION AND ESTIMATION SECTION%%%%%        
-    % calculate the new position of the robot
-    oldPosition = position;
-    [position, errorCovMat] = PositionCalc(botTagLower, beaconLocations, ...
-        errorCovMat, xbeeSerial, rpi, localizeThisIteration, beaconGPIO, ...
-        pingBeaconPath, pingBeaconDelay, debug, oldPosition);
-    
-    index = index + 1;
-
+% pathIndex keeps track of where we are in the path
+pathIndex = 1;
+while pathIndex <= size(path,1)
+    [position, heading] = getPositions(config, tags);
+    [desiredPosition, pathIndex] = getDesiredPositions(config, position,...
+        path, pathIndex);
+    controlInput = getControlInputs(config, position, heading,...
+        desiredPosition, slope, intercept);
+    sendControlInputs(config, tags, controlInput);
 end
 
-disp("All robots should be optimally arranged.");
+%% OLD MAIN LOOP
+% %% Create Sensor and Position variables for each robot
+% position = zeros(length(bots), 3);
+% oldPosition = position;
+% % Estimate/predict next position (depending on if we localize or not)
+% [position, errorCovMat] = PositionCalc(botTagLower, beaconLocations,...
+%     errorCovMat, xbeeSerial, rpi, localizeThisIteration, beaconGPIO,...
+%     pingBeaconPath, pingBeaconDelay, debug, oldPosition);
+% 
+% nextPosition = getNextPosition(algorithm, bots, position);
+% error = zeros(3*length(bots),1);
+% 
+% 
+% exitCounter = 0;
+% index = 1;
+% 
+% %% Main loop
+% while (true) 
+%     localizeThisIteration = true;
+%     %see if any of the robots are its next position
+%     for i= 1:length(bots)
+%         check = checkPosition(position(i,:),nextPosition(i,:));
+%         if(check == true)
+%             nextPosition = getNextPosition(algorithm, bots, position);
+%         end
+%         %check to see if the robot's new position is its current position
+%         check = checkPosition(position(i,:),nextPosition(i,:));
+%         if(check == true)
+%             exitCounter = exitCounter + 1;
+%         end
+%     end
+%     
+%     %if all of the new positions match the robots' old position, exit the
+%     %program
+%     if(exitCounter == length(bots))
+%         break;
+%     end
+% 
+%     %%%%%CONTROL SECTION%%%%%
+%     % Determine motor inputs based off of controller 
+%   
+%     AdjustPosition(xbeeSerial, bots, position, ...
+%         nextPosition, index, error, leftInputSlope, leftInputIntercept, ...
+%         rightInputSlope, rightInputIntercept);
+% 
+% 
+%     % start all the robots to start moving after giving them motor inputs
+%     fopen(xbeeSerial);
+%     fwrite(xbeeSerial, '1');
+%     fclose(xbeeSerial);
+% 
+%     %%%%%NAVIGATION AND ESTIMATION SECTION%%%%%        
+%     % calculate the new position of the robot
+%     oldPosition = position;
+%     [position, errorCovMat] = PositionCalc(botTagLower, beaconLocations, ...
+%         errorCovMat, xbeeSerial, rpi, localizeThisIteration, beaconGPIO, ...
+%         pingBeaconPath, pingBeaconDelay, debug, oldPosition);
+%     
+%     index = index + 1;
+% 
+% end
+% 
+% disp("All robots should be optimally arranged.");
