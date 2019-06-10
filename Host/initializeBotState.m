@@ -20,10 +20,10 @@ function [positions, tags, heading] = initializeBotState(config)
 %     The heading of the positive x-axis in degrees
 
 % Get tags being used
-tags = upper(input('Enter bot tags being used','s'));
+tags = upper(input('Enter bot tags being used: ','s'));
 while isempty(tags) || ~arrayfun(@(i) contains(config.validTags,tags(i)), length(tags))
     disp(['Must be any combination of: ' config.validTags]);
-    tags = upper(input('Enter bot tags being used','s'));
+    tags = upper(input('Enter bot tags being used: ','s'));
 end
 positions = zeros(length(tags),2);
 % Input the staritng cooridinates for each robot

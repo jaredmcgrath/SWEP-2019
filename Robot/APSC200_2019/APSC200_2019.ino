@@ -56,7 +56,7 @@ float loopTime;
  * ID's should be numbered 0-6 inclusively
  */
 byte message[2];
-byte id = 1;
+byte id = 2;
 #define ALL_AGENTS 7
 
 ////////////////////////////////////////////////////////// Object Declarations //////////////////////////////////////////////////////////
@@ -126,8 +126,6 @@ void botSetup(){
   
   #if DEBUG
   Serial.println(F("botSetup completed"));
-  // Bots send a RESP_OK when they've come online
-  confirm();
   #endif
 }
 
@@ -149,8 +147,6 @@ void botCheck(){
   Serial.print(F("Inital X ")); Serial.println(xPosition); 
   Serial.print(F("Initial Y ")); Serial.println(yPosition); 
   Serial.println(F("botCheck completed"));
-  // Bots send a RESP_OK when they've come online
-  confirm();
   #endif
 }
 

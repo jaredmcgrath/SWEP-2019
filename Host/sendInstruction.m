@@ -36,29 +36,46 @@ end
 B0 = bitor(bitshift(uint8(id),5), uint8(config.insStruct.(instruction)));
 fopen(config.xbee);
 switch instruction
-    % 1 byte instructions, no response
-    case {'GO','STOP','G_GO','G_RESET'}
-        fwrite(config.xbee,B0);
-    case 'G_CONF'
-        fwrite(config.xbee,B0);
-        % Wait until all bots have responded
-        disp(fread(config.xbee,tag,'uint8'));
-    % Instructions that require a response
+    % All instructions are sent, and then wait for a response
+    % If no response received, resend instruction
+    case {'GO','STOP'}
+        while true
+            fwrite(config.xbee,B0);
+            [~, count] = fread(config.xbee,1,'uint8');
+            if count, break; end
+        end
+    case {'G_CONF','G_GO','G_RESET'}
+        while true
+            fwrite(config.xbee,B0);
+            [~, count] = fread(config.xbee,tag,'uint8');
+            if count==tag, break; end
+        end
+    % GET instructions
     case {'GET_T_L','GET_T_R','GET_B'}
-        fwrite(config.xbee,B0);
-        rslt = fread(config.xbee,2,'uint8');
+        while true
+            fwrite(config.xbee,B0);
+            [rslt,count] = fread(config.xbee,2,'uint8');
+            if count==2, break; end
+        end
         response = bitor(bitshift(bitand(rslt(1),31),8),rslt(2));
     case 'GET_A'
-        fwrite(config.xbee,B0);
-        rslt = fread(config.xbee,2,'uint8');
+        while true
+            fwrite(config.xbee,B0);
+            % rslt is data received, count is # of uint8's in rslt
+            [rslt, count] = fread(config.xbee,2,'uint8');
+            if count==2, break; end
+        end
         % Convert angle to radians
         response = bitor(bitshift(bitand(rslt(1),31),8),rslt(2))*pi/180;
     case {'GET_X','GET_Y'}
-        fwrite(config.xbee,B0);
-        rslt = fread(config.xbee,2,'uint8');
+        while true
+            fwrite(config.xbee,B0);
+            [rslt, count] = fread(config.xbee,2,'uint8');
+            if count==2, break; end
+        end
         % Convert back to decimal
         response = bitor(bitshift(bitand(rslt(1),31),8),rslt(2))/100;
-    % 2 byte instructions, no response
+    % SET instructions
     case {'SET_X','SET_Y'}
         % Keep 2 decimals, truncate remainder
         data = uint16(data*100);
@@ -66,16 +83,24 @@ switch instruction
         B0 = bitor(B0, uint8(bitshift(data,-8)));
         % B1 is the least significant 8 bits
         B1 = bitand(data,255);
-        fwrite(config.xbee, B0);
-        fwrite(config.xbee, B1);
+        while true
+            fwrite(config.xbee, B0);
+            fwrite(config.xbee, B1);
+            [~, count] = fread(config.xbee, 1, 'uint8');
+            if count, break; end
+        end
     case 'SET_H'
         data = uint16(data);
         % Put most significant bit in B0
         B0 = bitor(B0, uint8(bitshift(data,-8)));
         % B1 is the least significant 8 bits
         B1 = bitand(data,255);
-        fwrite(config.xbee, B0);
-        fwrite(config.xbee, B1);
+        while true
+            fwrite(config.xbee, B0);
+            fwrite(config.xbee, B1);
+            [~,count] = fread(config.xbee, 1, 'uint8');
+            if count, break; end
+        end
     case {'SET_M_L','SET_M_R'}
         % Most significant bit indicates sign of value
         if data<0
@@ -83,7 +108,12 @@ switch instruction
         end
         % B1 is the magnitude of the data, should be less or equal to 255
         B1 = uint8(data);
-        fwrite(config.xbee, B0);
-        fwrite(config.xbee, B1);
+        while true
+            fwrite(config.xbee, B0);
+            fwrite(config.xbee, B1);
+            [~,count] = fread(config.xbee, 1, 'uint8');
+            if count, break; end
+        end
 end
+
 fclose(config.xbee);

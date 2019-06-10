@@ -103,7 +103,7 @@ pathFileName = 'agentData.mat';
 
 %% XBEE SETUP
 % Set up the Xbee connection
-config.xbee = serial('COM8','Terminator','CR', 'Timeout', 5);
+config.xbee = serial('COM8','Terminator','CR', 'Timeout', 1);
 
 % END XBEE SETUP
 
@@ -119,7 +119,9 @@ disp('Bots setup successfully')
 
 %% PATH LOADING
 % Loads the paths for the agents
-path = load(pathFileName,'agentPositionHistory');
+pathFile = load(pathFileName);
+% Take all history, truncate columns to match number of robots
+path = pathFile.agentPositionHistory(:,1:2*length(tags));
 
 % END PATH LOADING
 
@@ -129,7 +131,7 @@ path = load(pathFileName,'agentPositionHistory');
 if strcmpi(input('Calibrate bots? (y/n) ', 's'), 'y')
     [slope, intercept] = calibrateWheels(config,tags);
     % Update config file to the new values
-    saveWheelConfig(configFileName, slope, intercept);
+    saveWheelConfig(configFileName, slope, intercept, tags);
 end
 
 % END WHEEL CALIBRATION

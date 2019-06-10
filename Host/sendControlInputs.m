@@ -18,4 +18,4 @@ for i=1:length(tags)
     sendInstruction(config, 'SET_M_L', tags(i), controlInput(i,1));
     sendInstruction(config, 'SET_M_R', tags(i), controlInput(i,2));
 end
-sendInstruction(config, 'G_GO');
+sendInstruction(config, 'G_GO', length(tags));

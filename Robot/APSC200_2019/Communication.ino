@@ -8,10 +8,15 @@ void checkForIns() {
     Serial.print("Instruction received: "); Serial.println(data, HEX);
     Serial.print("ID: "); Serial.println(insId);
     #endif
-    // If instuction ID is for this bot, or it is a global instruction
-    if (insId == id || insId == ALL_AGENTS) {
+    // If instuction ID is for this bot
+    if (insId == id) {
       // Mask the instruction so ID bits are 0
       executeIns(data & 0x1F);
+    }
+    // If instruction is for all bots
+    else if (insId == ALL_AGENTS) {
+      // Send whole instruction
+      executeIns(data);
     }
     // If the instruction is 2 bytes, cycle the XBee until second byte is read and discarded
     else if (data & 0x10) {
@@ -50,6 +55,7 @@ void executeIns(byte ins) {
   }
   switch (ins) {
     case 0x00:
+      confirm();
       go();
       break;
     case 0x01:
@@ -72,40 +78,49 @@ void executeIns(byte ins) {
       break;
     case 0x07:
       // apparently stop is a reserved word
+      confirm();
       dontGo();
       break;
     case 0x12:
       setX(msb);
+      confirm();
       break;
     case 0x14:
       setY(msb);
+      confirm();
       break;
     case 0x16:
       setHeading(msb);
+      confirm();
       break;
     case 0x18:
       setLeftMotor(msb);
+      confirm();
       break;
     case 0x1A:
       setRightMotor(msb);
+      confirm();
       break;
     case 0xE0:
+      confirm();
       go();
       break;
     case 0xE1:
+      confirm();
       reset();
       break;
     case 0xE2:
       confirm();
       break;
     case 0xE3:
+      confirm();
       dontGo();
       break;
     default:
       #if DEBUG
         Serial.println("Bad instruction");
       #endif
-      badResponse();
+      //badResponse();
       break;
   }
 }
@@ -124,10 +139,16 @@ void dontGo() {
 }
 
 void badResponse() {
+  #if DEBUG
+    Serial.print("Bad response, sending "); Serial.println(id<<5);
+  #endif
   XBee.write(id<<5);
 }
 
 void confirm() {
+  #if DEBUG
+    Serial.print("Confirm response, sending "); Serial.println((id<<5) | 0x1F);
+  #endif
   XBee.write((id<<5) | 0x1F);
 }
 
