@@ -13,7 +13,7 @@ function sendControlInputs(config, tags, controlInput)
 %
 % Returns:
 %   N/A
-
+sendInstruction(config, 'G_STOP', length(tags));
 for i=1:length(tags)
     sendInstruction(config, 'SET_M_L', tags(i), controlInput(i,1));
     sendInstruction(config, 'SET_M_R', tags(i), controlInput(i,2));

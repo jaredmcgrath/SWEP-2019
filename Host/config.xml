@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Config XML file for APSC200 P2 host-robot interface -->
-<config>
+<!-- Config XML file for APSC200 P2 host-robot interface --><config>
     
 	  <boundary>
 		    <maxX>5.12</maxX>
@@ -18,12 +17,12 @@
 			      <value>0</value>
 			      <name>Shannon</name>
 			      <leftWheel>
-				        <slope>13.8021</slope>
+				        <slope>13.0454</slope>
 				        <intercept>100</intercept>
 			      </leftWheel>
 			      <rightWheel>
-				        <slope>15.2288</slope>
-				        <intercept>95</intercept>
+				        <slope>16.254</slope>
+				        <intercept>90</intercept>
 			      </rightWheel>
 		    </bot>
 		    <bot>
@@ -31,12 +30,12 @@
 			      <value>1</value>
 			      <name>Euler</name>
 			      <leftWheel>
-				        <slope>15.0318</slope>
-				        <intercept>95</intercept>
+				        <slope>16.1562</slope>
+				        <intercept>100</intercept>
 			      </leftWheel>
 			      <rightWheel>
-				        <slope>16.5011</slope>
-				        <intercept>100</intercept>
+				        <slope>15.7985</slope>
+				        <intercept>105</intercept>
 			      </rightWheel>
 		    </bot>
 		    <bot>
@@ -44,12 +43,12 @@
 			      <value>2</value>
 			      <name>Laplace</name>
 			      <leftWheel>
-				        <slope>19.1394</slope>
+				        <slope>17.7831</slope>
 				        <intercept>110</intercept>
 			      </leftWheel>
 			      <rightWheel>
-				        <slope>Inf</slope>
-				        <intercept>120</intercept>
+				        <slope>18.7594</slope>
+				        <intercept>95</intercept>
 			      </rightWheel>
 		    </bot>
 	  </botTags>

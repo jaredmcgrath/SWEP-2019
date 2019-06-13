@@ -132,6 +132,9 @@ if strcmpi(input('Calibrate bots? (y/n) ', 's'), 'y')
     [slope, intercept] = calibrateWheels(config,tags);
     % Update config file to the new values
     saveWheelConfig(configFileName, slope, intercept, tags);
+else
+    slope = config.slope(ismember(config.validTags,tags),:);
+    intercept = config.intercept(ismember(config.validTags,tags),:);
 end
 
 % END WHEEL CALIBRATION
@@ -167,6 +170,7 @@ while pathIndex <= size(path,1)
     controlInput = getControlInputs(config, position, heading,...
         desiredPosition, slope, intercept);
     sendControlInputs(config, tags, controlInput);
+    %pause(0.15);
 end
 
 %% OLD MAIN LOOP
