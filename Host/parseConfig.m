@@ -17,6 +17,10 @@ function config = parseConfig(path)
 %      maxError
 %        Maximum allowable error when considering if an agent has reached a
 %        desired location
+%      rChassis
+%        Radius of the robot's chassis
+%      rWheel
+%        Radius of the robot's wheel
 %      validTags
 %       A string, where each character is that of one bot
 %      tagIdStruct
@@ -47,6 +51,16 @@ maxY = str2double(maxYNode.getTextContent());
 maxErrNode = configDOM.getElementsByTagName('maxError');
 maxErrNode = maxErrNode.item(0);
 maxError = str2double(maxErrNode.getTextContent());
+
+% Get rChassis
+rChassisNode = configDOM.getElementsByTagName('chassisRadius');
+rChassisNode = rChassisNode.item(0);
+rChassis = str2double(rChassisNode.getTextContent());
+
+% Get rWheel
+rWheelNode = configDOM.getElementsByTagName('wheelRadius');
+rWheelNode = rWheelNode.item(0);
+rWheel = str2double(rWheelNode.getTextContent());
 
 % Get bot tags/ids
 tagNodes = configDOM.getElementsByTagName('bot');
@@ -115,4 +129,4 @@ end
 % Put all values into a struct
 config = struct('maxX',maxX,'maxY',maxY,'maxError',maxError,'validTags',...
     validTags,'tagIdStruct',tagIdStruct,'insStruct',insStruct,'slope',...
-    slope,'intercept',intercept);
+    slope,'intercept',intercept,'rChassis',rChassis,'rWheel',rWheel);

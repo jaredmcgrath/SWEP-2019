@@ -26,28 +26,20 @@ function controlInput = getControlInputs(config, position, heading,...
 %     n-by-2 vector of control inputs (-255<=input<=255) in 
 %     [L1 R1; L2 R2; ... ] format
 
-% TODO: Make the old code below work
-% Old inputs were:
-% q, desiredPosition, i, e, leftInputSlope, leftInputIntercept, rightInputSlope, rightInputIntercept
-% Corresponding to:
-% currentPosition(i,:), desiredPosition(i,:), index, error, ...
-% Found in AdjustPosition.m
+% TODO: Test new code
 %% Constants
-% TODO: Move constants to config file
-
 % Distance from center of chassis to edge of wheel
-rChassis = 0.126/2;
+rChassis = config.rChassis;
 % Radius of wheel
-rWheel = 0.063/2;
+rWheel = config.rWheel;
 
 %% Parametric Path and State Arrays
-% TODO: Adapt these variables to be compatible with multiple bots
-% simultaneously
-q = q';
-qd = zeros(1,3);
-qd(1:2) = desiredPosition(1:2);
+q = cat(2,position,heading);
+qd = zeros(size(q));
+qd(:,1:2) = desiredPosition;
 % Desired velocity in m/s (constant, so we can decide what this needs to be)
-Vn = 0.2;
+% TODO: Move to config file?
+Vn = 0.2*ones(length(q),1);
 Vd = Vn;
 
 %% Linear Quadratic Regulator Conditions
@@ -57,59 +49,68 @@ Q = [8 0 0; 0 6 0; 0 0 15];
 R = [3 0; 0 1];
 
 %% Control
-qd(3) = atan2(qd(2)-q(2), qd(1)-q(1));
-e(:,i) = q(:) - qd(:);
-e(3, :) = unwrap(e(3,:));
+qd(:,3) = atan2(qd(:,2)-q(:,2), qd(:,1)-q(:,1));
+% Might need to unrap the theta error
+e = q - qd;
 
-% Check if it would be more efficient to travel backwards
-if abs(e(3)) > pi/2
-    if qd(3)>0
-        qd(3) = qd(3) - pi;
-        Vd = -Vn;
-    elseif qd(3) < 0
-        qd(3) = qd(3) + pi;
-        Vd = -Vn;
-    end 
-else 
-    Vd = Vn;
-end
+% Find bots where it is more efficient to travel backwards
+gtIndexes = find(e(:,3)>pi/2);
+e(gtIndexes,3) = e(gtIndexes,3) - pi;
+Vd(gtIndexes) = -Vd(gtIndexes);
+ltIndexes = find(e(:,3)<-pi/2);
+e(ltIndexes,3) = e(ltIndexes,3) + pi;
+Vd(ltIndexes) = -Vd(ltIndexes);
 
-e(:, i) = q(:) - qd(:);
-e(3, :) = unwrap(e(3,:));
-
-error = e(:,i);
+% Not sure if error needs to be returned/kept track of
+% error = e(:,i);
 
 %% Linearization
-% Apply the linear model
-% Evaluate matrix at desired inputs and location
-A = [0, 0, -Vd*sin(qd(3));0, 0, Vd*cos(qd(3));0, 0, 0];
-B = [cos(qd(3)), 0;sin(qd(3)), 0;0, 1];
-% Compute gain matrix using LQR
-K = lqr(A, B, Q, R);
-
-% Get system inputs from gain matrix and error vector
-u = -K*[0; 0; e(3)] + [Vd; 0];
+% Preallocate uniqycle inputs
+u = zeros(length(q),2);
+% Apply the linear model to each bot in a loop
+for i = 1:length(q)
+    % Evaluate matrix at desired inputs and location
+    A = [0 0 -Vd(i)*sin(qd(i,3)); 0 0 Vd(i)*cos(qd(i,3)); 0 0 0];
+    B = [cos(qd(i,3)) 0; sin(qd(i,3)) 0; 0 1];
+    % Compute gain matrix using LQR
+    K = lqr(A, B, Q, R);
+    % Get system inputs from gain matrix and error vector
+    u(i,:) = -K*[0; 0; e(i,3)] + [Vd(i); 0];
+end
 
 %% Differential Drive
 % Convert unicycle model to differential drive
-Wr = u(1)./rWheel + rChassis.*u(2)./rWheel;
-Wl = u(1)./rWheel - rChassis.*u(2)./rWheel;
+controlInput = [(u(:,1) - rChassis.*u(:,2)), (u(:,1) + rChassis.*u(:,2))]...
+    /rWheel;
+
+% Old, for reference
+% Wr = u(1)./rWheel + rChassis.*u(2)./rWheel;
+% Wl = u(1)./rWheel - rChassis.*u(2)./rWheel;
 
 % Apply the linear calibration coefficients to yield actual inputs
-Wr = rightInputSlope*Wr + sign(Wr)*rightInputIntercept;
-Wl = leftInputSlope*Wl + sign(Wl)*leftInputIntercept;
+controlInput = (controlInput.*slope) + (sign(controlInput).*slope);
+
+% Old, for reference
+% Wr = rightInputSlope*Wr + sign(Wr)*rightInputIntercept;
+% Wl = leftInputSlope*Wl + sign(Wl)*leftInputIntercept;
 
 % Ensure wheel inputs are integers in the proper range
-if abs(Wr) > 255
-    Wr = 255*sign(Wr);
-elseif abs(Wr) <= 100
-    Wr = 0;
-end
-Wr = round(Wr);
+controlInput(controlInput>255) = 255;
+controlInput(controlInput<-255) = -255;
+controlInput(abs(controlInput)<intercept) = 0;
+controlInput = round(controlInput);
 
-if abs(Wl) > 255
-    Wl = 255*sign(Wl);
-    elseif abs(Wl) <= 100
-    Wl = 0;
-end
-Wl = round(Wl);
+% Old, for reference
+% if abs(Wr) > 255
+%     Wr = 255*sign(Wr);
+% elseif abs(Wr) <= 100
+%     Wr = 0;
+% end
+% Wr = round(Wr);
+% 
+% if abs(Wl) > 255
+%     Wl = 255*sign(Wl);
+%     elseif abs(Wl) <= 100
+%     Wl = 0;
+% end
+% Wl = round(Wl);

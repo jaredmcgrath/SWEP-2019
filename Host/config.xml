@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Config XML file for APSC200 P2 host-robot interface --><config>
+<!-- Config XML file for APSC200 P2 host-robot interface -->
+<config>
+    
 	  <boundary>
 		    <maxX>5.12</maxX>
 		    <maxY>5.12</maxY>
 	  </boundary>
+      
+    <chassisRadius>0.0630</chassisRadius>
+    <wheelRadius>0.0315</wheelRadius>
     
     <maxError>0.05</maxError>
 	
