@@ -16,6 +16,22 @@
 /////////////////////////////// Program Parameters ///////////////////////////////////////////////
 #define MOVEMENT_DURATION 1000      // [msec] The amount of time that the robots will drive for before they stop (1000 for 1 second)
 
+// Localization Parameters
+// Constants
+#define DATA_PADDING_VALUE 2147483648 // (0x80000000) added before transmission to ensure that the transmission is 32 bits
+#define NUM_BEACONS 5 // Number of Beacons
+#define ZERO_DIST_TIME_DELAY 22000 // The time delay of the system when taking a measurement from 0mm (it's a fudge factor)
+float ambientTemp = 17; // [deg C] will eventually be determined in real-time. Used to make time to distance measurements using the speed of sound more accurate
+
+// Localization Parameters
+#define US_NOMINAL_VOLTAGE_BOUND 20   // Unit is (probably) equivalent to 2mV. Any reading greater than this value on the US sensor is deemed to be an incoming US signal
+#define US_TIMEOUT_THRESHOLD 400000   // [usec] Number of microseconds waited for US reception before timing out (previously #define US_TIMEOUT_THRESHOLD 250000)
+#define IR_TIMEOUT_THRESHOLD 650000  // [usec] Number of microseconds waited for IR reception before timing out (previously 300000)
+#define BEACON_TIMEOUT_THRESHOLD 1500000  // [usec] Number of microseconds waited for beacon to ping before timing out
+#define MAX_POSSIBLE_TDOT 1500000 // [usec] The largest amount of time it would take for the RPi to send the first IR and then US signal
+#define MIN_POSSIBLE_TDOT 50000   // [usec] The shortest amount of time it would take for the RPi to send the first IR and the US signal
+#define MOVEMENT_DURATION 1000    // [msec] the amount of time that the robots will drive for before they stop (1000 for 1 second)
+
 /////////////////////////////// Define all needed pins ///////////////////////////////////////////////
 #define MOTOR_R 0 // right motor (A)
 #define MOTOR_L 1 // left motor (B)
@@ -25,6 +41,8 @@
 #define DIRA 8 // Direction control for motor A
 #define PWMA 9  // PWM control (speed) for motor A
 #define PWMB 10 // PWM control (speed) for motor B
+#define IR_INPUT 11 // Input port for IR Transmission (Localization)
+#define US_INPUT A0 // Input for the US Transmission (Localization)
 #define BATTERY_PIN A1   // battery level indicator pin. Would be hooked up to votlage divider from 9v barrel jack, but currently not implemented
 
 /////////////////////////////// Sensor Variables ///////////////////////////////////////////////
@@ -44,6 +62,26 @@ float xPosition = 0, yPosition = 0; // Stores the robot's current x and y positi
 float theta = 0; // Stores the current angle of the robot, from the gyro
 float gyroZ; //stores the Z component of the gyroscope so it can be manipulated into an angle
 unsigned long oldTime = 0, currentTime = 0; // Variables to timestamp the loops to calculate position
+
+////////////////////////////// Localization Variables ////////////////////////////////////////////
+// Localization
+int voltRead; // Ultrasonic pin voltage when a US signal is received
+#if DEBUG
+int voltReadMax; // Max voltage read during US reception. Must be in DEBUG mode to be enabled
+#endif
+uint8_t beaconID; // Unique ID. Takes value from 1-NUM BEACONS (should be 5)
+bool usTimeoutFlag; // Set to true if system times out before US reception
+bool irTimeoutFlag; // Set to true if system times out before IR reception
+uint8_t beaconErrorCode = 8; //contains 1-8 depending on localization error. Note that we initialize this to be 8, the "no data received" error code
+
+// Timing/distance variable declarations
+unsigned long irRecvTime;
+unsigned long usRecvTime;
+unsigned long beaconStartTime;
+unsigned long tdot; // Time difference of transmission
+long tdoa; // Time difference of arrival. Signed since it can be a (small) negative due to inaccuracies 
+int beaconDistances[NUM_BEACONS]; // [mm] Array of distances to be sent back to MATLAB
+uint8_t beaconErrorCodes[NUM_BEACONS]; // Array of error codes associated with distance measurements. To be sent back to MATLAB
 
 /////////////////////////////// Other Variables /////////////////////////////////////////////////
 int leftInput, rightInput; //A variable to convert the wheel speeds from char (accepted), to int
@@ -115,6 +153,7 @@ void botSetup(){
   displaySensorDetails(); //Shows the details about the sensor module, could be removed or put in an if(DEBUG) statement
   configureSensor(); //Configures the sensitivity of the sensor module
   setupArdumoto(); //Sets up the ardumoto shield for the robot's motors
+  localizationSetup(); //Sets up Localization system
 
   // Pin config
   pinMode(ENCODER_L, INPUT_PULLUP); // Set the mode for the encoder pins
@@ -164,4 +203,3 @@ void botLoop(){
 //  #endif   
   delay(20);
 }
-
