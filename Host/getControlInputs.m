@@ -34,12 +34,14 @@ rChassis = config.rChassis;
 rWheel = config.rWheel;
 
 %% Parametric Path and State Arrays
+% Concatonate position and heading so q = [x1 y1 theta1; x2 y2 theta2; ...]
 q = cat(2,position,heading);
+% qd is desired position ()
 qd = zeros(size(q));
 qd(:,1:2) = desiredPosition;
 % Desired velocity in m/s (constant, so we can decide what this needs to be)
 % TODO: Move to config file?
-Vn = 0.2*ones(length(q),1);
+Vn = 0.18*ones(size(q,1),1);
 Vd = Vn;
 
 %% Linear Quadratic Regulator Conditions
@@ -66,9 +68,9 @@ Vd(ltIndexes) = -Vd(ltIndexes);
 
 %% Linearization
 % Preallocate uniqycle inputs
-u = zeros(length(q),2);
+u = zeros(size(q,1),2);
 % Apply the linear model to each bot in a loop
-for i = 1:length(q)
+for i = 1:size(q,1)
     % Evaluate matrix at desired inputs and location
     A = [0 0 -Vd(i)*sin(qd(i,3)); 0 0 Vd(i)*cos(qd(i,3)); 0 0 0];
     B = [cos(qd(i,3)) 0; sin(qd(i,3)) 0; 0 1];
@@ -97,7 +99,7 @@ controlInput = (controlInput.*slope) + (sign(controlInput).*slope);
 % Ensure wheel inputs are integers in the proper range
 controlInput(controlInput>255) = 255;
 controlInput(controlInput<-255) = -255;
-controlInput(abs(controlInput)<intercept) = 0;
+%controlInput(abs(controlInput)<intercept) = 0;
 controlInput = round(controlInput);
 
 % Old, for reference

@@ -44,7 +44,7 @@ switch instruction
             [~, count] = fread(config.xbee,1,'uint8');
             if count, break; end
         end
-    case {'G_CONF','G_GO','G_RESET'}
+    case {'G_CONF','G_GO','G_RESET','G_STOP'}
         while true
             fwrite(config.xbee,B0);
             [~, count] = fread(config.xbee,tag,'uint8');
@@ -107,7 +107,7 @@ switch instruction
             B0 = bitor(B0, 1);
         end
         % B1 is the magnitude of the data, should be less or equal to 255
-        B1 = uint8(data);
+        B1 = uint8(abs(data));
         while true
             fwrite(config.xbee, B0);
             fwrite(config.xbee, B1);

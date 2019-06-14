@@ -9,10 +9,10 @@ void configureSensor(void)
   //lsm.setupAccel(lsm.LSM9DS0_ACCELRANGE_16G);
   
   // 2.) Set the magnetometer sensitivity
-  //lsm.setupMag(lsm.LSM9DS0_MAGGAIN_2GAUSS);
+  lsm.setupMag(lsm.LSM9DS0_MAGGAIN_2GAUSS);
   //lsm.setupMag(lsm.LSM9DS0_MAGGAIN_4GAUSS);
   //lsm.setupMag(lsm.LSM9DS0_MAGGAIN_8GAUSS);
-  lsm.setupMag(lsm.LSM9DS0_MAGGAIN_12GAUSS);
+  //lsm.setupMag(lsm.LSM9DS0_MAGGAIN_12GAUSS);
 
   // 3.) Setup the gyroscope
   lsm.setupGyro(lsm.LSM9DS0_GYROSCALE_245DPS);
@@ -69,13 +69,12 @@ void displaySensorDetails(void)
 
 //getHeading gets a snapshot of all of the sensors on the module, then uses magnetic field to calculate theta
 void getHeading(){
-  lsm.getEvent(&accel, &mag, &gyro, &temp); 
-  heading = (float) ((int)(atan2(mag.magnetic.y, mag.magnetic.x)*1000) % (int)(PI*1000))/1000.0;
-  theta = (float) ((int)((heading - baseline)*1000) % (int)(PI*1000))/1000.0;
+  lsm.getEvent(&accel, &mag, &gyro, &temp);
+  heading = atan2(mag.magnetic.y, mag.magnetic.x);
+  theta = heading - baseline;
 
-//  #if DEBUG
-//  Serial.println("Heading, theta:");
-//  Serial.println(heading);
-//  Serial.println(theta);
-//  #endif
+  #if DEBUG
+  Serial.print("Mag X: "); Serial.println(mag.magnetic.x);
+  Serial.print("Mag Y: "); Serial.println(mag.magnetic.y);
+  #endif
 }

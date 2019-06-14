@@ -11,7 +11,7 @@
 #include <IRremote.h>   // Localization: Needed to read received IR patterns
 
 /////////////////////////////// Program Execution Options ///////////////////////////////////////////////
-#define DEBUG 0
+#define DEBUG 1
 
 /////////////////////////////// Program Parameters ///////////////////////////////////////////////
 #define MOVEMENT_DURATION 1000      // [msec] The amount of time that the robots will drive for before they stop (1000 for 1 second)
@@ -94,7 +94,7 @@ float loopTime;
  * ID's should be numbered 0-6 inclusively
  */
 byte message[2];
-byte id = 2;
+byte id = 0;
 #define ALL_AGENTS 7
 
 ////////////////////////////////////////////////////////// Object Declarations //////////////////////////////////////////////////////////
@@ -201,5 +201,5 @@ void botLoop(){
 //  Serial.print(F("Angle in Degrees ")); Serial.println(theta); 
 //  Serial.print(F("Heading in Degrees ")); Serial.println(heading); 
 //  #endif   
-  delay(20);
+  delay(1000);
 }
