@@ -100,7 +100,7 @@ void beaconRecvData()
     // (added 0xFFFFFFFF before transmission) in order to be 32 bits for IR transmission
     beaconID = 4294967295 - irData.value;
 
-    if (beaconID > 1 && beaconID <= NUM_BEACONS)
+    if (beaconID > 0 && beaconID <= NUM_BEACONS)
     {
       if (micros() - irRecvTime > US_TIMEOUT_THRESHOLD)
       {
