@@ -6,11 +6,11 @@ void checkForIns() {
     insId = getInsId(data);
     #if DEBUG
     Serial.print("Instruction received: "); Serial.println(data, HEX);
-    Serial.print("ID: "); Serial.println(insId);
+    Serial.print("id: "); Serial.println(insId);
     #endif
-    // If instuction ID is for this bot
+    // If instuction id is for this bot
     if (insId == id) {
-      // Mask the instruction so ID bits are 0
+      // Mask the instruction so id bits are 0
       executeIns(data & 0x1F);
     }
     // If instruction is for all bots
@@ -154,6 +154,10 @@ void confirm() {
 
 void reset() {
   asm volatile ("  jmp 0");
+}
+
+void goFixed() {
+  
 }
 
 /*

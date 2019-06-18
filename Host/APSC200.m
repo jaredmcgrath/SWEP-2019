@@ -170,7 +170,7 @@ while pathIndex <= size(path,1)
     controlInput = getControlInputs(config, position, heading,...
         desiredPosition, slope, intercept);
     sendControlInputs(config, tags, controlInput);
-    %pause(0.15);
+    pause(0.15);
 end
 
 %% OLD MAIN LOOP

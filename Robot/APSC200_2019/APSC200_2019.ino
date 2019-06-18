@@ -1,9 +1,7 @@
-#include <Adafruit_LSM9DS0.h>
-
 /////////////////////////////// Set up the libraries ///////////////////////////////////////////////
 // IMPORTANT: "#define NO_PORTD_PINCHANGES" must be before "#include <SoftSerialFix.h>"
 #define NO_PORTD_PINCHANGES // to indicate that port d will not be used for pin change interrupts
-#include <PinChangeInterrupt.h> //Needed with the above line to have more interrupts that dont interfere with the Xbee --- WAS PinChangeInt.h before, I couldn't find that library, but found PinChangeInterrupt instead
+#include <PinChangeInt.h> //Needed with the above line to have more interrupts that dont interfere with the Xbee --- WAS PinChangeInt.h before, I couldn't find that library, but found PinChangeInterrupt instead
 #include <SoftSerialFix.h> //Communication: Needed to create a software serial port for the Xbee
 #include "Wire.h"
 #include "math.h"
@@ -50,7 +48,6 @@ float ambientTemp = 17; // [deg C] will eventually be determined in real-time. U
 /////////////////////////////// Sensor Variables ///////////////////////////////////////////////
 sensor_t accelSetup, magSetup, gyroSetup, tempSetup; //Variables used to setup the sensor module
 sensors_event_t accel, mag, gyro, temp; // Variables to store current sensor event data
-sensors_vec_t gravity, gravNorm, magNorm, east, north; // Resultant vectors from lpf and/or cross product
 float heading, baseline = 0; // Variables to store the calculated heading and the baseline variable (Baseline may be unnecessary)
 bool isHeadingSet = false;
 
@@ -81,6 +78,7 @@ uint8_t beaconErrorCode = 8; //contains 1-8 depending on localization error. Not
 unsigned long irRecvTime;
 unsigned long usRecvTime;
 unsigned long beaconStartTime;
+long beaconDist;
 unsigned long tdot; // Time difference of transmission
 long tdoa; // Time difference of arrival. Signed since it can be a (small) negative due to inaccuracies 
 int beaconDistances[NUM_BEACONS]; // [mm] Array of distances to be sent back to MATLAB
@@ -97,12 +95,16 @@ float loopTime;
  * ID's should be numbered 0-6 inclusively
  */
 byte message[2];
-byte id = 0;
+int id = 0;
 #define ALL_AGENTS 7
+#define X_MAG_OFFSET 0.15704F
+#define Y_MAG_OFFSET -0.01664F
+#define X_MAG_SCALE 1.04986F
+#define Y_MAG_SCALE 1.0F
 
 ////////////////////////////////////////////////////////// Object Declarations //////////////////////////////////////////////////////////
-//IRrecv irrecv(irPin); // Set up the Infrared receiver object to get its data
-//decode_results irData; // An object for the infrared data to be stored and decoded
+IRrecv irrecv(IR_INPUT); // Set up the Infrared receiver object to get its data
+decode_results irData; // An object for the infrared data to be stored and decoded
 Adafruit_LSM9DS0 lsm = Adafruit_LSM9DS0(); //An object for the sensor module, to be accessed to get the data
 SoftSerialFix XBee(4,5); //The software created serial port to communicate through the Xbee
 
@@ -116,7 +118,7 @@ void setup(){
   
   botSetup(); // Set's up Bot configuration
   botCheck(); // Check's that setup was successful and bot is ready to function
-  localizationSetup(); // Performs required setup for Localization Process
+  //localizationSetup(); // Performs required setup for Localization Process
   
   #if DEBUG
   Serial.println(F("\n\nRobot setup complete, beginning main loop\n\n"));
@@ -125,11 +127,17 @@ void setup(){
 
 //////////////////////////////// Main Loop /////////////////////////////////////////////////////////
 void loop() {
-  /* Code that enables timing analysis for the loop
-  startLoop = endLoop;
-  endLoop = millis();
-  loopTime = (float) (endLoop - startLoop)/1000;
-  */
+  /*
+   *   This code can be used to find the calibration values for the magnetoscope
+  minX = minX > mag.magnetic.x ? mag.magnetic.x : minX;
+  minY = minY > mag.magnetic.y ? mag.magnetic.y : minY;
+  maxX = maxX < mag.magnetic.x ? mag.magnetic.x : maxX;
+  maxY = maxY < mag.magnetic.y ? mag.magnetic.y : maxY;
+  Serial.print("minX: "); Serial.print(minX, 6); Serial.print(" minY: "); Serial.println(minY, 6);
+  Serial.print("maxX: "); Serial.print(maxX, 6); Serial.print(" maxY: "); Serial.println(maxY, 6);
+  delay(50);
+   */
+   
   botLoop();
 }
 
@@ -157,7 +165,7 @@ void botSetup(){
   displaySensorDetails(); //Shows the details about the sensor module, could be removed or put in an if(DEBUG) statement
   configureSensor(); //Configures the sensitivity of the sensor module
   setupArdumoto(); //Sets up the ardumoto shield for the robot's motors
-  localizationSetup(); //Sets up Localization system
+  //localizationSetup(); //Sets up Localization system
 
   // Pin config
   pinMode(ENCODER_L, INPUT_PULLUP); // Set the mode for the encoder pins
@@ -201,10 +209,6 @@ void botLoop(){
   getHeading();
   positionCalc(); //update the position of the robot
   checkForIns();
-  localization(); // Runs localization procedure for the robot
-//  #if DEBUG
-//  Serial.print(F("Angle in Degrees ")); Serial.println(theta); 
-//  Serial.print(F("Heading in Degrees ")); Serial.println(heading); 
-//  #endif   
-  delay(1000);
+  //localization(); // Runs localization procedure for the robot
+  delay(500);
 }
