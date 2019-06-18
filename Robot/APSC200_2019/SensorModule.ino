@@ -18,6 +18,13 @@ void configureSensor(void)
   lsm.setupGyro(lsm.LSM9DS0_GYROSCALE_245DPS);
   //lsm.setupGyro(lsm.LSM9DS0_GYROSCALE_500DPS);
   //lsm.setupGyro(lsm.LSM9DS0_GYROSCALE_2000DPS);
+
+  // Get sensor info for the old sensor data
+  lsm.getEvent(&accel, &mag, &gyro, &temp);
+  // Perform deep copy on magnetometer's x,y,z
+  gravity.x = mag.magentic.x;
+  gravity.y = mag.magentic.y;
+  gravity.z = mag.magentic.z;
 }
 
 //displaySensorDetails gets the sensor details from the ui
@@ -69,12 +76,45 @@ void displaySensorDetails(void)
 
 //getHeading gets a snapshot of all of the sensors on the module, then uses magnetic field to calculate theta
 void getHeading(){
+  // Get sensor snapshot
   lsm.getEvent(&accel, &mag, &gyro, &temp);
-  heading = atan2(mag.magnetic.y, mag.magnetic.x);
+  // Low-pass filter on accelerometer data to (hopefully) yield gravity
+  lpf(&(accel.acceleration), &gravity, 0.95);
+  // Normalize gravity, mag
+  norm(&gravity, &gravNorm);
+  norm(&(mag.magnetic), &magNorm);
+  // Cross magnetic field with gravity to yield the eastern direction
+  cross(&gravNorm, &magNorm, &east);
+  // Cross east with gravity to yield north
+  cross(&gravNorm, &east, &north);
+  // Compute heading from north vector
+  heading = atan2(north.y, north.x);
   theta = heading - baseline;
 
   #if DEBUG
-  Serial.print("Mag X: "); Serial.println(mag.magnetic.x);
-  Serial.print("Mag Y: "); Serial.println(mag.magnetic.y);
+  Serial.print("Mag X: "); Serial.println(north->x);
+  Serial.print("Mag Y: "); Serial.println(north->y);
   #endif
+}
+
+// lpf is a low pass filter. The resultant is located at rslt, which is a pointer to a sensors_vec_t struct
+void lpf(sensors_vec_t *eventData, sensors_vec_t *rslt, float bias) {
+  rslt->x = rslt->x * bias + eventData->x * (1 - bias);
+  rslt->y = rslt->y * bias + eventData->y * (1 - bias);
+  rslt->z = rslt->z * bias + eventData->z * (1 - bias);
+}
+
+// Computes cross product a X b, stores resultant in rslt
+void cross(sensors_vec_t *a, sensors_vec_t *b, sensors_vec_t *rslt) {
+  rslt->x = a->y * b->z - a->z * b->y;
+  rslt->y = a->z * b->x - a->x * b->z;
+  rslt->z = a->x * b->y - a->y * b->x;
+}
+
+// Computes the norm of a vector AND normalizes it, storing result in rslt
+void norm(sensors_vec_t *v, sensors_vec_t *rslt) {
+  float norm = sqrt(sq(v->x) + sq(v->y) + sq(v->z));
+  rslt->x = v->x/norm;
+  rslt->y = v->y/norm;
+  rslt->z = v->z/norm;
 }

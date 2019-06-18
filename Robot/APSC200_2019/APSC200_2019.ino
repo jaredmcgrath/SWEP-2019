@@ -1,3 +1,5 @@
+#include <Adafruit_LSM9DS0.h>
+
 /////////////////////////////// Set up the libraries ///////////////////////////////////////////////
 // IMPORTANT: "#define NO_PORTD_PINCHANGES" must be before "#include <SoftSerialFix.h>"
 #define NO_PORTD_PINCHANGES // to indicate that port d will not be used for pin change interrupts
@@ -47,7 +49,8 @@ float ambientTemp = 17; // [deg C] will eventually be determined in real-time. U
 
 /////////////////////////////// Sensor Variables ///////////////////////////////////////////////
 sensor_t accelSetup, magSetup, gyroSetup, tempSetup; //Variables used to setup the sensor module
-sensors_event_t accel, mag, gyro, temp; // Variables to store the data of the sensors every time it is retrieved
+sensors_event_t accel, mag, gyro, temp; // Variables to store current sensor event data
+sensors_vec_t gravity, gravNorm, magNorm, east, north; // Resultant vectors from lpf and/or cross product
 float heading, baseline = 0; // Variables to store the calculated heading and the baseline variable (Baseline may be unnecessary)
 bool isHeadingSet = false;
 
