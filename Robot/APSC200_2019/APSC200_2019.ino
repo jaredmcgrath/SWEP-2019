@@ -3,7 +3,7 @@
 /////////////////////////////// Set up the libraries ///////////////////////////////////////////////
 // IMPORTANT: "#define NO_PORTD_PINCHANGES" must be before "#include <SoftSerialFix.h>"
 #define NO_PORTD_PINCHANGES // to indicate that port d will not be used for pin change interrupts
-#include <PinChangeInt.h> //Needed with the above line to have more interrupts that dont interfere with the Xbee
+#include <PinChangeInterrupt.h> //Needed with the above line to have more interrupts that dont interfere with the Xbee --- WAS PinChangeInt.h before, I couldn't find that library, but found PinChangeInterrupt instead
 #include <SoftSerialFix.h> //Communication: Needed to create a software serial port for the Xbee
 #include "Wire.h"
 #include "math.h"
@@ -114,8 +114,9 @@ void setup(){
   Serial.begin(9600);
   #endif
   
-  botSetup();
-  botCheck();
+  botSetup(); // Set's up Bot configuration
+  botCheck(); // Check's that setup was successful and bot is ready to function
+  localizationSetup(); // Performs required setup for Localization Process
   
   #if DEBUG
   Serial.println(F("\n\nRobot setup complete, beginning main loop\n\n"));
@@ -200,6 +201,7 @@ void botLoop(){
   getHeading();
   positionCalc(); //update the position of the robot
   checkForIns();
+  localization(); // Runs localization procedure for the robot
 //  #if DEBUG
 //  Serial.print(F("Angle in Degrees ")); Serial.println(theta); 
 //  Serial.print(F("Heading in Degrees ")); Serial.println(heading); 
