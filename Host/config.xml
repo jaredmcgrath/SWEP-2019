@@ -17,12 +17,12 @@
 			      <value>0</value>
 			      <name>Shannon</name>
 			      <leftWheel>
-				        <slope>17.0363</slope>
+				        <slope>15.5365</slope>
 				        <intercept>105</intercept>
 			      </leftWheel>
 			      <rightWheel>
-				        <slope>15.8577</slope>
-				        <intercept>115</intercept>
+				        <slope>16.5485</slope>
+				        <intercept>105</intercept>
 			      </rightWheel>
 		    </bot>
 		    <bot>
@@ -145,6 +145,10 @@
 			      <name>SET_M_R</name>
 			      <value>26</value>
 		    </instruction>
+            <instruction>
+			      <name>GO_F</name>
+			      <value>28</value>
+		    </instruction>
 		    <instruction>
 			      <name>G_GO</name>
 			      <value>224</value>
@@ -160,6 +164,10 @@
 		    <instruction>
 			      <name>G_STOP</name>
 			      <value>227</value>
+		    </instruction>
+            <instruction>
+			      <name>G_GO_F</name>
+			      <value>240</value>
 		    </instruction>
 	  </instructionSet>
 </config>

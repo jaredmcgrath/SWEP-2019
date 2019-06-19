@@ -46,8 +46,23 @@ close all
 clear
 clc
 
-%% TO DO
-% - Make a config file for all settings instead of hard-coding them
+%% TO DO (June 19th, 2019)
+% - Move fixed movement duration to config file (figure out what works)
+% - Fix control model (weighting and cost parameters)
+%   - Talk to Scott about how the LQR works
+% - Change communication for getting positions to happen globally
+%   - Add global GET_X/Y/A
+%   - Make use of ID bits in response
+%   - Remember to change getPositions
+% - Arduino getX(), getY() need to allow for negative values in response
+%   - Determine best way to implement signed integers in 13-bit data space
+% - Figure out if Shannon actually moves backwards, and how to fix this
+%   - Best solution is to rewire, saves headaches later
+% - Figure out if the LSM works on Euler/Laplace
+%   - No data output, apparently. Could be wiring issue
+% - Calibrate magnetometer on Euler/Laplace
+%   - Change Arduino code to have calibrated values specific to that bot
+% - Test the fixed duration movement timing for accuracy/precision
 
 %% RUNTIME PARAMETERS
 
@@ -170,7 +185,7 @@ while pathIndex <= size(path,1)
     controlInput = getControlInputs(config, position, heading,...
         desiredPosition, slope, intercept);
     sendControlInputs(config, tags, controlInput);
-    pause(0.15);
+    %pause(0.15);
 end
 
 %% OLD MAIN LOOP

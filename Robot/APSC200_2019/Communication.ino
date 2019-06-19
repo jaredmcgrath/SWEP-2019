@@ -45,13 +45,18 @@ byte getInsId(byte ins) {
  */
 void executeIns(byte ins) {
   byte msb = 0;
-  // If this is a 2 byte ins, need to isolate instruction and preserve most significant data bit
+  // If this is a 2 byte, single bot instruction, need to isolate instruction and preserve most significant data bit
   if ((ins & 0x10) && (getInsId(ins) != ALL_AGENTS)) {
     msb = ins & 0x1;
     ins = ins & 0x1E;
     #if DEBUG
       Serial.print("2 byte instruction. Actual ins: "); Serial.println(ins);
     #endif
+  }
+  // If this is a 2 byte, global instruction, isolate instruction and preserve MSB
+  else if (ins & 0x10) {
+    msb = ins & 0x1;
+    ins = ins & 0xFE;
   }
   switch (ins) {
     case 0x00:
@@ -101,6 +106,10 @@ void executeIns(byte ins) {
       setRightMotor(msb);
       confirm();
       break;
+    case 0x1C:
+      confirm();
+      goFixed(msb);
+      break;
     case 0xE0:
       confirm();
       go();
@@ -115,6 +124,10 @@ void executeIns(byte ins) {
     case 0xE3:
       confirm();
       dontGo();
+      break;
+    case 0xF0:
+      confirm();
+      goFixed(msb);
       break;
     default:
       #if DEBUG
@@ -180,12 +193,13 @@ void getY() {
 }
 
 void getAngle() {
-  uint16_t t = theta<0 ? (uint16_t)((theta+2*PI)*180/PI) : (uint16_t)(theta*180/PI);
+  //uint16_t t = theta<0 ? (uint16_t)((theta+2*PI)*180/PI) : (uint16_t)(theta*180/PI);
+  uint16_t t = (uint16_t) (theta*180/PI);
   #if DEBUG
   Serial.println("Angle in degrees:");
   Serial.println(t);
   #endif
-  message[0] = (id<<5) | (t>>8 & 0x1F);
+  message[0] = (id<<5) | (t>>8 & 0x01);
   message[1] = t & 0xFF;
   XBee.write((char*)message, 2);
 }
@@ -254,5 +268,17 @@ void setLeftMotor(byte msb) {
 
 void setRightMotor(byte msb) {
   rightInput = (msb ? -1 : 1) * getNextByte();
+}
+
+void goFixed(byte msb) {
+  // Get duration of movement (data value is in centiseconds)
+  uint16_t duration = (msb<<8 | getNextByte())*10;
+  // Drive the motors
+  driveArdumoto(MOTOR_L, leftInput);
+  driveArdumoto(MOTOR_R, rightInput);
+  // Calculate endtime
+  endTime = millis() + duration;
+  // Set to true to indicate it needs to be stopped in future
+  isMovingFixed = true;
 }
 

@@ -11,11 +11,9 @@
 #include <IRremote.h>   // Localization: Needed to read received IR patterns
 
 /////////////////////////////// Program Execution Options ///////////////////////////////////////////////
-#define DEBUG 1
+#define DEBUG 0
 
 /////////////////////////////// Program Parameters ///////////////////////////////////////////////
-#define MOVEMENT_DURATION 1000      // [msec] The amount of time that the robots will drive for before they stop (1000 for 1 second)
-
 // Localization Parameters
 // Constants
 #define DATA_PADDING_VALUE 2147483648 // (0x80000000) added before transmission to ensure that the transmission is 32 bits
@@ -50,6 +48,8 @@ sensor_t accelSetup, magSetup, gyroSetup, tempSetup; //Variables used to setup t
 sensors_event_t accel, mag, gyro, temp; // Variables to store current sensor event data
 float heading, baseline = 0; // Variables to store the calculated heading and the baseline variable (Baseline may be unnecessary)
 bool isHeadingSet = false;
+// Debug variables to calibrate magnetometer
+// float maxX = 0, maxY = 0, minX = 0, minY = 0;
 
 /////////////////////////////// Encoder Variables ///////////////////////////////////////////////
 int oldLeftEncoder = 0, oldRightEncoder = 0; // Stores the encoder value from the loop prior to estimate x, y position
@@ -86,6 +86,13 @@ uint8_t beaconErrorCodes[NUM_BEACONS]; // Array of error codes associated with d
 
 /////////////////////////////// Other Variables /////////////////////////////////////////////////
 int leftInput, rightInput; //A variable to convert the wheel speeds from char (accepted), to int
+
+// Interruptible movement variables
+// If Arduino is moving for a fixed duration
+bool isMovingFixed = false;
+// Clock value to stop movement at
+unsigned long endTime;
+
 
 int startLoop, endLoop; //Loop timing variables to know how long the loop takes
 float loopTime;
@@ -127,16 +134,14 @@ void setup(){
 
 //////////////////////////////// Main Loop /////////////////////////////////////////////////////////
 void loop() {
-  /*
-   *   This code can be used to find the calibration values for the magnetoscope
-  minX = minX > mag.magnetic.x ? mag.magnetic.x : minX;
-  minY = minY > mag.magnetic.y ? mag.magnetic.y : minY;
-  maxX = maxX < mag.magnetic.x ? mag.magnetic.x : maxX;
-  maxY = maxY < mag.magnetic.y ? mag.magnetic.y : maxY;
-  Serial.print("minX: "); Serial.print(minX, 6); Serial.print(" minY: "); Serial.println(minY, 6);
-  Serial.print("maxX: "); Serial.print(maxX, 6); Serial.print(" maxY: "); Serial.println(maxY, 6);
-  delay(50);
-   */
+  // This code can be used to find the calibration values for the magnetoscope
+//  minX = minX > mag.magnetic.x ? mag.magnetic.x : minX;
+//  minY = minY > mag.magnetic.y ? mag.magnetic.y : minY;
+//  maxX = maxX < mag.magnetic.x ? mag.magnetic.x : maxX;
+//  maxY = maxY < mag.magnetic.y ? mag.magnetic.y : maxY;
+//  Serial.print("minX: "); Serial.print(minX, 6); Serial.print(" minY: "); Serial.println(minY, 6);
+//  Serial.print("maxX: "); Serial.print(maxX, 6); Serial.print(" maxY: "); Serial.println(maxY, 6);
+//  delay(50);
    
   botLoop();
 }
@@ -205,10 +210,15 @@ void botCheck(){
 //updated by the encoders and the gyro then the Xbee is checked to see if it has any intruction from MATLAB, then the appropriate
 //action is performed
 void botLoop(){
-  //update the angle of the robot
+  // Update orientation
   getHeading();
-  positionCalc(); //update the position of the robot
+  // Update bot position using encoders/dead reckoning
+  positionCalc();
+  // Check for any instructions
   checkForIns();
-  //localization(); // Runs localization procedure for the robot
-  delay(500);
+  // Check if movement should be interrupted
+  interruptMovement();
+  // Localization procedure
+  //localization();
+  //delay(20);
 }

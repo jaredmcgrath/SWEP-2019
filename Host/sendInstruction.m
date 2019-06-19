@@ -114,6 +114,33 @@ switch instruction
             [~,count] = fread(config.xbee, 1, 'uint8');
             if count, break; end
         end
+    case 'GO_F'
+        % Divide data by 10 to get centiseconds
+        data = round(data/10);
+        % Put most significant bit in B0
+        B0 = bitor(B0, uint8(bitshift(data,-8)));
+        % B1 is the least significant 8 bits
+        B1 = bitand(data,255);
+        while true
+            fwrite(config.xbee, B0);
+            fwrite(config.xbee, B1);
+            [~, count] = fread(config.xbee, 1, 'uint8');
+            if count, break; end
+        end
+    % Global with data
+    case 'G_GO_F'
+        % Divide data by 10 to get centiseconds
+        data = round(data/10);
+        % Put most significant bit in B0
+        B0 = bitor(B0, uint8(bitshift(data,-8)));
+        % B1 is the least significant 8 bits
+        B1 = bitand(data,255);
+        while true
+            fwrite(config.xbee, B0);
+            fwrite(config.xbee, B1);
+            [~, count] = fread(config.xbee, tag, 'uint8');
+            if count, break; end
+        end
 end
 
 fclose(config.xbee);

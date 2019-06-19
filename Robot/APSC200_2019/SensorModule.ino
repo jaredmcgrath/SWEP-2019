@@ -76,11 +76,13 @@ void getHeading(){
   mag.magnetic.y = Y_MAG_SCALE*mag.magnetic.y - Y_MAG_OFFSET;
   // Compute heading
   heading = atan2(mag.magnetic.y, mag.magnetic.x) + PI/2;
-  if (heading < 0) heading = heading + 2*PI; 
+  if (heading < 0) heading = heading + 2*PI;
   theta = heading - baseline;
+  if (theta < 0) theta = theta + 2*PI;
 
   #if DEBUG
   Serial.print("X: "); Serial.print(mag.magnetic.x, 5); Serial.print(" Y: "); Serial.println(mag.magnetic.y, 5);
   Serial.print("Heading: "); Serial.print(heading*180/PI); Serial.print(" Theta: "); Serial.println(theta*180/PI);
+  Serial.print("Heading: "); Serial.print(heading); Serial.print(" Theta: "); Serial.println(theta);
   #endif
 }

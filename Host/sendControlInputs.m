@@ -13,9 +13,12 @@ function sendControlInputs(config, tags, controlInput)
 %
 % Returns:
 %   N/A
-sendInstruction(config, 'G_STOP', length(tags));
+
+% Probably don't need G_STOP now that G_GO_F will stop bots
+% sendInstruction(config, 'G_STOP', length(tags));
 for i=1:length(tags)
     sendInstruction(config, 'SET_M_L', tags(i), controlInput(i,1));
     sendInstruction(config, 'SET_M_R', tags(i), controlInput(i,2));
 end
-sendInstruction(config, 'G_GO', length(tags));
+% Go for 600ms
+sendInstruction(config, 'G_GO_F', length(tags), 600);

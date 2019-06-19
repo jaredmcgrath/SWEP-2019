@@ -48,7 +48,7 @@ Vd = Vn;
 % Weighting matrix for importance of the three errors forward, lateral, theta
 Q = [8 0 0; 0 6 0; 0 0 15];
 % Cost matrix for V, W. High cost ensures we don't max out at 255 for every control input. 
-R = [3 0; 0 1];
+R = [3 0; 0 2];
 
 %% Control
 qd(:,3) = atan2(qd(:,2)-q(:,2), qd(:,1)-q(:,1));
