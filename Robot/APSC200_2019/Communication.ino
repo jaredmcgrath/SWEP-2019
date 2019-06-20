@@ -125,6 +125,15 @@ void executeIns(byte ins) {
       confirm();
       dontGo();
       break;
+    case 0xE4:
+      getX();
+      break;
+    case 0xE5:
+      getY();
+      break;
+    case 0xE6:
+      getAngle();
+      break;
     case 0xF0:
       confirm();
       goFixed(msb);
@@ -177,16 +186,31 @@ void goFixed() {
  * All GET responses return data that is at most 13 bits wide
  */
 void getX() {
-  // Hopefully x fits into the allocated 13 bits
-  uint16_t x = (uint16_t)(xPosition*100);
+  // x is a 13-bit 2's complement signed integer
+  uint16_t x;
+  if (xPosition < 0) {
+    // Take magnitude of x*100, put into uint16, perform bitwise complement, truncate leading 3 bits, and add 1
+    x = (~((uint16_t)(-100*xPosition)) & 0x1FFF) + 1;
+  } else {
+    x = (uint16_t)(xPosition*100);
+  }
+  #if DEBUG
+  Serial.print("X value, bin: "); Serial.println(x, BIN);
+  #endif
   message[0] = (id<<5) | ((x>>8) & 0x1F);
   message[1] = x & 0xFF;
   XBee.write((char*)message, 2);
 }
 
 void getY() {
-  // Hopefully y also fits into 13 bits
-  uint16_t y = (uint16_t)(yPosition*100);
+  // y is a 13-bit 2's complement signed integer
+  uint16_t y;
+  if (yPosition < 0) {
+    // Take magnitude of y*100, put into uint16, perform bitwise complement, truncate leading 3 bits, and add 1
+    y = (~((uint16_t)(-100*yPosition)) & 0x1FFF) + 1;
+  } else {
+    y = (uint16_t)(yPosition*100);
+  }
   message[0] = (id<<5) | (y>>8 & 0x1F);
   message[1] = y & 0xFF;
   XBee.write((char*)message, 2);
@@ -199,13 +223,14 @@ void getAngle() {
   Serial.println("Angle in degrees:");
   Serial.println(t);
   #endif
+  // This number should always be unsigned integer < 360, so only need 9 bits
   message[0] = (id<<5) | (t>>8 & 0x01);
   message[1] = t & 0xFF;
   XBee.write((char*)message, 2);
 }
 
 void getLeftTicks() {
-  int ticks = leftEncoder - lastLeftTicks;
+  int ticks = abs(leftEncoder - lastLeftTicks);
   lastLeftTicks = leftEncoder;
   message[0] = (id<<5) | (ticks>>8 & 0x1F);
   message[1] = ticks & 0xFF;
@@ -213,7 +238,7 @@ void getLeftTicks() {
 }
 
 void getRightTicks() {
-  int ticks = rightEncoder - lastRightTicks;
+  int ticks = abs(rightEncoder - lastRightTicks);
   lastRightTicks = rightEncoder;
   message[0] = (id<<5) | (ticks>>8 & 0x1F);
   message[1] = ticks & 0xFF;
@@ -262,12 +287,19 @@ void setHeading(byte msb) {
 }
 
 void setLeftMotor(byte msb) {
-  // This is not how signed integers work, really. if msb = 0, input is >0. else, input is <0
-  leftInput = (msb ? -1 : 1) * getNextByte();
+  // Correct for Shannon going backwards
+  if (id == 0) 
+    leftInput = (msb ? 1 : -1) * getNextByte();
+  else
+    leftInput = (msb ? -1 : 1) * getNextByte();
 }
 
 void setRightMotor(byte msb) {
-  rightInput = (msb ? -1 : 1) * getNextByte();
+  // Correct for shannon going backwards
+  if (id == 0) 
+    rightInput = (msb ? 1 : -1) * getNextByte();
+  else
+    rightInput = (msb ? -1 : 1) * getNextByte();
 }
 
 void goFixed(byte msb) {

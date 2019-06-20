@@ -37,8 +37,8 @@ for i = 1:numBots
     leftTicks = sendInstruction(config, 'GET_T_L', tags(i));
     maxLeft = leftTicks*pi/(96*elapsed);
     % Intercept
-    leftIntercept = 120;
-    while leftTicks > 5
+    leftIntercept = 150;
+    while leftTicks > 10
         leftIntercept = leftIntercept - 5;
         sendInstruction(config, 'SET_M_L', tags(i), leftIntercept);
         sendInstruction(config, 'GO', tags(i));
@@ -58,8 +58,8 @@ for i = 1:numBots
     rightTicks = sendInstruction(config, 'GET_T_R', tags(i));
     maxRight = rightTicks*pi/(96*elapsed);
     % Intercept
-    rightIntercept = 120;
-    while rightTicks > 5
+    rightIntercept = 150;
+    while rightTicks > 10
         rightIntercept = rightIntercept - 5;
         sendInstruction(config, 'SET_M_R', tags(i), rightIntercept);
         sendInstruction(config, 'GO', tags(i));

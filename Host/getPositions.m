@@ -16,12 +16,8 @@ function [position,heading] = getPositions(config, tags)
 %     n-by-1 vector of bot orientation(s), counter-clockwise from the
 %     positive x-axis
 
-n = length(tags);
-position = zeros(n,2);
-heading = zeros(n,1);
-for i = 1:n
-    position(i,1) = sendInstruction(config, 'GET_X', tags(i));
-    position(i,2) = sendInstruction(config, 'GET_Y', tags(i));
-    heading(i) = sendInstruction(config, 'GET_A', tags(i));
-end
+position = zeros(length(tags),2);
+position(:,1) = sendInstruction(config, 'G_GET_X', tags);
+position(:,2) = sendInstruction(config, 'G_GET_Y', tags);
+heading = sendInstruction(config, 'G_GET_A', tags);
 

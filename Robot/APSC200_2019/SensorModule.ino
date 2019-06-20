@@ -71,6 +71,7 @@ void displaySensorDetails(void)
 void getHeading(){
   // Get sensor snapshot
   lsm.getEvent(&accel, &mag, &gyro, &temp);
+  Serial.print("Mag X:"); Serial.print(X_MAG_OFFSET); Serial.print(" Mag Y:"); Serial.println(Y_MAG_OFFSET); 
   // Shift the magnetometer data for calibration
   mag.magnetic.x = X_MAG_SCALE*mag.magnetic.x - X_MAG_OFFSET;
   mag.magnetic.y = Y_MAG_SCALE*mag.magnetic.y - Y_MAG_OFFSET;
@@ -81,8 +82,8 @@ void getHeading(){
   if (theta < 0) theta = theta + 2*PI;
 
   #if DEBUG
-  Serial.print("X: "); Serial.print(mag.magnetic.x, 5); Serial.print(" Y: "); Serial.println(mag.magnetic.y, 5);
-  Serial.print("Heading: "); Serial.print(heading*180/PI); Serial.print(" Theta: "); Serial.println(theta*180/PI);
-  Serial.print("Heading: "); Serial.print(heading); Serial.print(" Theta: "); Serial.println(theta);
+//  Serial.print("X: "); Serial.print(mag.magnetic.x, 5); Serial.print(" Y: "); Serial.println(mag.magnetic.y, 5);
+//  Serial.print("Heading: "); Serial.print(heading*180/PI); Serial.print(" Theta: "); Serial.println(theta*180/PI);
+  //Serial.print("Heading: "); Serial.print(heading); Serial.print(" Theta: "); Serial.println(theta);
   #endif
 }

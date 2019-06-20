@@ -11,7 +11,7 @@
 #include <IRremote.h>   // Localization: Needed to read received IR patterns
 
 /////////////////////////////// Program Execution Options ///////////////////////////////////////////////
-#define DEBUG 0
+#define DEBUG 1
 
 /////////////////////////////// Program Parameters ///////////////////////////////////////////////
 // Localization Parameters
@@ -49,7 +49,7 @@ sensors_event_t accel, mag, gyro, temp; // Variables to store current sensor eve
 float heading, baseline = 0; // Variables to store the calculated heading and the baseline variable (Baseline may be unnecessary)
 bool isHeadingSet = false;
 // Debug variables to calibrate magnetometer
-// float maxX = 0, maxY = 0, minX = 0, minY = 0;
+ float maxX = 0, maxY = 0, minX = 0, minY = 0;
 
 /////////////////////////////// Encoder Variables ///////////////////////////////////////////////
 int oldLeftEncoder = 0, oldRightEncoder = 0; // Stores the encoder value from the loop prior to estimate x, y position
@@ -102,12 +102,28 @@ float loopTime;
  * ID's should be numbered 0-6 inclusively
  */
 byte message[2];
-int id = 0;
 #define ALL_AGENTS 7
+
+#define ID 0
+
+#if ID == 0
 #define X_MAG_OFFSET 0.15704F
 #define Y_MAG_OFFSET -0.01664F
 #define X_MAG_SCALE 1.04986F
 #define Y_MAG_SCALE 1.0F
+#elif ID == 1
+#define X_MAG_OFFSET -0.07146F
+#define Y_MAG_OFFSET -0.0344F
+#define X_MAG_SCALE 1.0F
+#define Y_MAG_SCALE 1.03635F
+#elif ID == 2
+#define X_MAG_OFFSET 0.045205F
+#define Y_MAG_OFFSET -0.04684F
+#define X_MAG_SCALE 1.034785F
+#define Y_MAG_SCALE 1.0F
+#endif
+
+int id = ID;
 
 ////////////////////////////////////////////////////////// Object Declarations //////////////////////////////////////////////////////////
 IRrecv irrecv(IR_INPUT); // Set up the Infrared receiver object to get its data
@@ -124,7 +140,7 @@ void setup(){
   #endif
   
   botSetup(); // Set's up Bot configuration
-  botCheck(); // Check's that setup was successful and bot is ready to function
+  //botCheck(); // Check's that setup was successful and bot is ready to function
   //localizationSetup(); // Performs required setup for Localization Process
   
   #if DEBUG
@@ -135,15 +151,16 @@ void setup(){
 //////////////////////////////// Main Loop /////////////////////////////////////////////////////////
 void loop() {
   // This code can be used to find the calibration values for the magnetoscope
-//  minX = minX > mag.magnetic.x ? mag.magnetic.x : minX;
-//  minY = minY > mag.magnetic.y ? mag.magnetic.y : minY;
-//  maxX = maxX < mag.magnetic.x ? mag.magnetic.x : maxX;
-//  maxY = maxY < mag.magnetic.y ? mag.magnetic.y : maxY;
-//  Serial.print("minX: "); Serial.print(minX, 6); Serial.print(" minY: "); Serial.println(minY, 6);
-//  Serial.print("maxX: "); Serial.print(maxX, 6); Serial.print(" maxY: "); Serial.println(maxY, 6);
-//  delay(50);
+  getHeading();
+  minX = minX > mag.magnetic.x ? mag.magnetic.x : minX;
+  minY = minY > mag.magnetic.y ? mag.magnetic.y : minY;
+  maxX = maxX < mag.magnetic.x ? mag.magnetic.x : maxX;
+  maxY = maxY < mag.magnetic.y ? mag.magnetic.y : maxY;
+  Serial.print("minX: "); Serial.print(minX, 6); Serial.print(" minY: "); Serial.println(minY, 6);
+  Serial.print("maxX: "); Serial.print(maxX, 6); Serial.print(" maxY: "); Serial.println(maxY, 6);
+  delay(50);
    
-  botLoop();
+//  botLoop();
 }
 
 //////////////////////////////// Functions /////////////////////////////////////////////////////////
@@ -220,5 +237,5 @@ void botLoop(){
   interruptMovement();
   // Localization procedure
   //localization();
-  //delay(20);
+  delay(500);
 }

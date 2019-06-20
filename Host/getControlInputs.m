@@ -41,14 +41,14 @@ qd = zeros(size(q));
 qd(:,1:2) = desiredPosition;
 % Desired velocity in m/s (constant, so we can decide what this needs to be)
 % TODO: Move to config file?
-Vn = 0.18*ones(size(q,1),1);
+Vn = 0.2*ones(size(q,1),1);
 Vd = Vn;
 
 %% Linear Quadratic Regulator Conditions
 % Weighting matrix for importance of the three errors forward, lateral, theta
 Q = [8 0 0; 0 6 0; 0 0 15];
 % Cost matrix for V, W. High cost ensures we don't max out at 255 for every control input. 
-R = [3 0; 0 2];
+R = [3 0; 0 1];
 
 %% Control
 qd(:,3) = atan2(qd(:,2)-q(:,2), qd(:,1)-q(:,1));
@@ -99,7 +99,8 @@ controlInput = (controlInput.*slope) + (sign(controlInput).*slope);
 % Ensure wheel inputs are integers in the proper range
 controlInput(controlInput>255) = 255;
 controlInput(controlInput<-255) = -255;
-%controlInput(abs(controlInput)<intercept) = 0;
+boostIdx = find(abs(controlInput) > 50 & abs(controlInput) < intercept);
+controlInput(boostIdx) = sign(controlInput(boostIdx)).*(intercept(boostIdx)+10);
 controlInput = round(controlInput);
 
 % Old, for reference

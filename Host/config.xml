@@ -17,12 +17,12 @@
 			      <value>0</value>
 			      <name>Shannon</name>
 			      <leftWheel>
-				        <slope>15.5365</slope>
-				        <intercept>105</intercept>
+				        <slope>12.5061</slope>
+				        <intercept>115</intercept>
 			      </leftWheel>
 			      <rightWheel>
-				        <slope>16.5485</slope>
-				        <intercept>105</intercept>
+				        <slope>11.5623</slope>
+				        <intercept>135</intercept>
 			      </rightWheel>
 		    </bot>
 		    <bot>
@@ -164,6 +164,18 @@
 		    <instruction>
 			      <name>G_STOP</name>
 			      <value>227</value>
+		    </instruction>
+            <instruction>
+			      <name>G_GET_X</name>
+			      <value>228</value>
+		    </instruction>
+            <instruction>
+			      <name>G_GET_Y</name>
+			      <value>229</value>
+		    </instruction>
+            <instruction>
+			      <name>G_GET_A</name>
+			      <value>230</value>
 		    </instruction>
             <instruction>
 			      <name>G_GO_F</name>
