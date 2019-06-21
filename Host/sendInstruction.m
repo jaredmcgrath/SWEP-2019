@@ -99,6 +99,7 @@ switch instruction
             response(i) = bitor(bitshift(bitand(rslt(index,1),31),8),...
                 rslt(index,2))*pi/180;
         end
+        disp(response*180/pi);
     case {'GET_T_L','GET_T_R','GET_B'}
         while true
             fwrite(config.xbee,B0);

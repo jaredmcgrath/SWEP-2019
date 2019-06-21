@@ -287,19 +287,11 @@ void setHeading(byte msb) {
 }
 
 void setLeftMotor(byte msb) {
-  // Correct for Shannon going backwards
-  if (id == 0) 
-    leftInput = (msb ? 1 : -1) * getNextByte();
-  else
-    leftInput = (msb ? -1 : 1) * getNextByte();
+  leftInput = (msb ? -1 : 1) * getNextByte();
 }
 
 void setRightMotor(byte msb) {
-  // Correct for shannon going backwards
-  if (id == 0) 
-    rightInput = (msb ? 1 : -1) * getNextByte();
-  else
-    rightInput = (msb ? -1 : 1) * getNextByte();
+  rightInput = (msb ? -1 : 1) * getNextByte();
 }
 
 void goFixed(byte msb) {

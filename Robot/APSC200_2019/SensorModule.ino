@@ -71,19 +71,61 @@ void displaySensorDetails(void)
 void getHeading(){
   // Get sensor snapshot
   lsm.getEvent(&accel, &mag, &gyro, &temp);
-  Serial.print("Mag X:"); Serial.print(X_MAG_OFFSET); Serial.print(" Mag Y:"); Serial.println(Y_MAG_OFFSET); 
   // Shift the magnetometer data for calibration
-  mag.magnetic.x = X_MAG_SCALE*mag.magnetic.x - X_MAG_OFFSET;
-  mag.magnetic.y = Y_MAG_SCALE*mag.magnetic.y - Y_MAG_OFFSET;
+  mag.magnetic.x = magXScale*mag.magnetic.x + magXOffset;
+  mag.magnetic.y = magYScale*mag.magnetic.y + magYOffset;
   // Compute heading
   heading = atan2(mag.magnetic.y, mag.magnetic.x) + PI/2;
-  if (heading < 0) heading = heading + 2*PI;
+  if (heading < 0)
+    heading += 2*PI;
   theta = heading - baseline;
-  if (theta < 0) theta = theta + 2*PI;
+  if (theta < 0)
+    theta += 2*PI;
 
   #if DEBUG
-//  Serial.print("X: "); Serial.print(mag.magnetic.x, 5); Serial.print(" Y: "); Serial.println(mag.magnetic.y, 5);
-//  Serial.print("Heading: "); Serial.print(heading*180/PI); Serial.print(" Theta: "); Serial.println(theta*180/PI);
-  //Serial.print("Heading: "); Serial.print(heading); Serial.print(" Theta: "); Serial.println(theta);
+  Serial.print("X: "); Serial.print(mag.magnetic.x, 5); Serial.print(" Y: "); Serial.println(mag.magnetic.y, 5);
+  Serial.print("Heading: "); Serial.print(heading*180/PI); Serial.print(" Theta: "); Serial.println(theta*180/PI);
+  Serial.print("Heading: "); Serial.print(heading); Serial.print(" Theta: "); Serial.println(theta);
   #endif
 }
+
+// calibrateMagnetometer sets the magX/magY offset and scale values
+// The bot should spin around and take readings to detetermine the magnetic field strength in x and y
+// then determine the max/min readings, and calculate the calibrate values based on their linear relationship
+void calibrateMagnetometer() {
+  // Set motors to move
+  driveArdumoto(MOTOR_L, 128);
+  driveArdumoto(MOTOR_R, -128);
+  // Perform routine for 10 seconds (optimize?)
+  unsigned long caliEndTime = millis() + 5000;
+  // Loop
+  while (millis() < caliEndTime) {
+    getHeading();
+    minX = minX > mag.magnetic.x ? mag.magnetic.x : minX;
+    minY = minY > mag.magnetic.y ? mag.magnetic.y : minY;
+    maxX = maxX < mag.magnetic.x ? mag.magnetic.x : maxX;
+    maxY = maxY < mag.magnetic.y ? mag.magnetic.y : maxY;
+  }
+  // Stop motors
+  driveArdumoto(MOTOR_L, 0);
+  driveArdumoto(MOTOR_R, 0);
+  // Calculate calibration values
+  magXOffset = (maxX > 0 ? -1 : 1)*(maxX + minX)/2;
+  magYOffset = (maxY > 0 ? -1 : 1)*(maxY + minY)/2;
+  // Ranges are intermediate values used to determine which axis to apply scaling to
+  float rangeX = maxX - minX, rangeY = maxY - minY;
+  rangeX *= rangeX < 0 ? -1 : 1;
+  rangeY *= rangeY < 0 ? -1 : 1;
+  // One of these will be 1, the other > 1
+  magXScale = max(rangeX, rangeY)/rangeX;
+  magYScale = max(rangeX, rangeY)/rangeY;
+  
+  #if DEBUG
+  Serial.print("maxX: "); Serial.print(maxX); Serial.print(" maxY: "); Serial.println(maxY);
+  Serial.print("minX: "); Serial.print(minX); Serial.print(" minY: "); Serial.println(minY);
+  Serial.print("rangeX: "); Serial.print(rangeX); Serial.print(" rangeY: "); Serial.println(rangeY);
+  Serial.print("magXOffset: "); Serial.print(magXOffset); Serial.print(" magYOffset: "); Serial.println(magYOffset);
+  Serial.print("magXScale: "); Serial.print(magXScale); Serial.print(" magYScale: "); Serial.println(magYScale);
+  #endif
+}
+
