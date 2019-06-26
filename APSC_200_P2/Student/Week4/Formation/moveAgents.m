@@ -3,7 +3,7 @@ function agentData = moveAgents(agentData, L,...
 %% moveAgents
 % Move agents (and update any agent info, including enegry) whilst taking
 % into account the Laplacian, time delays (tau), offsets, energy, the 
-% current iteration, and time step
+% current iteration, and time step.
 %
 % Parameters:
 %   agentData
@@ -24,4 +24,4 @@ function agentData = moveAgents(agentData, L,...
 % Returns:
 %   agentData
 %     Agent positions after moving in (x,y) format
-%% Your Code Below
+

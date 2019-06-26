@@ -9,4 +9,3 @@ function L = calcL(A)
 % Returns:
 %   L
 %     Laplacian Matrix
-%% Your Code Below

@@ -107,7 +107,7 @@ pathFileName = 'agentData.mat';
 
 %% XBEE SETUP
 % Set up the Xbee connection
-config.xbee = serial('COM8','Terminator','CR', 'Timeout', 1);
+config.xbee = serial('/dev/tty.usbserial-DN01F2NX','Terminator','CR', 'Timeout', 1);
 
 % END XBEE SETUP
 
