@@ -46,8 +46,12 @@ close all
 clear
 clc
 
-%% TO DO
-% - Make a config file for all settings instead of hard-coding them
+%% TO DO (June 19th, 2019)
+% - Move fixed movement duration to config file (figure out what works)
+% - Fix control model (weighting and cost parameters)
+%   - Talk to Scott about how the LQR works
+% - Create calibration routine for magnetometer
+% - Test the fixed duration movement timing for accuracy/precision
 
 %% RUNTIME PARAMETERS
 
@@ -103,7 +107,7 @@ pathFileName = 'agentData.mat';
 
 %% XBEE SETUP
 % Set up the Xbee connection
-config.xbee = serial('COM8','Terminator','CR', 'Timeout', 1);
+config.xbee = serial('/dev/tty.usbserial-DN01F2NX','Terminator','CR', 'Timeout', 1);
 
 % END XBEE SETUP
 

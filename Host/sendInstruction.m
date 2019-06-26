@@ -51,6 +51,55 @@ switch instruction
             if count==tag, break; end
         end
     % GET instructions
+    case {'G_GET_X', 'G_GET_Y'}
+        % Need to receive n 2-byte responses, decode the id, translate ids
+        % to tags, lookup tags to indices in 'tag' vector, and return
+        % values
+        while true
+            fwrite(config.xbee, B0);
+            [rslt, count] = fread(config.xbee,[2 length(tag)],'uint8');
+            if count==2*length(tag), break; end
+        end
+        response = zeros(length(tag),1);
+        % transpose so each row of rslt is the 2 byte response of each bot
+        rslt = uint16(rslt)';
+        % Isolate leading 3 bits to get IDs
+        allIds = bitshift(bitand(rslt(:,1),224),-5);
+        for i = 1:length(tag)
+            % Find the index in rslt corresponding to tag(i)
+            index = find(config.tagIdStruct.(tag(i))==allIds);
+            % Piece the two bytes together
+            response(i) = bitor(bitshift(rslt(index,1),8),rslt(index,2));
+            % If number is negative (i.e. 13th bit = 1)
+            if bitand(response(i),4096)
+                % Reverse 2's complement, mask the leading 3 ID bits
+                % Then divide by 100, and negate result
+                response(i) = -double(bitand(bitcmp(int16(response(i)-1)),8191))/100;
+            else
+                % If positive, just mask the leading 3 ID bits and divide
+                response(i) = bitand(response(i),8191)/100;
+            end
+        end
+    case 'G_GET_A'
+        while true
+            fwrite(config.xbee, B0);
+            [rslt, count] = fread(config.xbee,[2 length(tag)],'uint8');
+            if count==2*length(tag), break; end
+        end
+        response = zeros(length(tag),1);
+        % transpose so each row of rslt is the 2 byte response of each bot
+        rslt = rslt';
+        % Isolate leading 3 bits to get IDs
+        allIds = bitshift(bitand(rslt(:,1),224),-5);
+        for i = 1:length(tag)
+            % Find the index in rslt corresponding to tag(i)
+            index = find(config.tagIdStruct.(tag(i))==allIds);
+            % Piece the two bytes together, masking ID bits, and convert to
+            % radians
+            response(i) = bitor(bitshift(bitand(rslt(index,1),31),8),...
+                rslt(index,2))*pi/180;
+        end
+        disp(response*180/pi);
     case {'GET_T_L','GET_T_R','GET_B'}
         while true
             fwrite(config.xbee,B0);
@@ -112,6 +161,33 @@ switch instruction
             fwrite(config.xbee, B0);
             fwrite(config.xbee, B1);
             [~,count] = fread(config.xbee, 1, 'uint8');
+            if count, break; end
+        end
+    case 'GO_F'
+        % Divide data by 10 to get centiseconds
+        data = round(data/10);
+        % Put most significant bit in B0
+        B0 = bitor(B0, uint8(bitshift(data,-8)));
+        % B1 is the least significant 8 bits
+        B1 = bitand(data,255);
+        while true
+            fwrite(config.xbee, B0);
+            fwrite(config.xbee, B1);
+            [~, count] = fread(config.xbee, 1, 'uint8');
+            if count, break; end
+        end
+    % Global with data
+    case 'G_GO_F'
+        % Divide data by 10 to get centiseconds
+        data = round(data/10);
+        % Put most significant bit in B0
+        B0 = bitor(B0, uint8(bitshift(data,-8)));
+        % B1 is the least significant 8 bits
+        B1 = bitand(data,255);
+        while true
+            fwrite(config.xbee, B0);
+            fwrite(config.xbee, B1);
+            [~, count] = fread(config.xbee, tag, 'uint8');
             if count, break; end
         end
 end

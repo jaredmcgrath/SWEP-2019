@@ -17,12 +17,12 @@
 			      <value>0</value>
 			      <name>Shannon</name>
 			      <leftWheel>
-				        <slope>13.0454</slope>
-				        <intercept>100</intercept>
+				        <slope>6.9164</slope>
+				        <intercept>145</intercept>
 			      </leftWheel>
 			      <rightWheel>
-				        <slope>16.254</slope>
-				        <intercept>90</intercept>
+				        <slope>7.0963</slope>
+				        <intercept>145</intercept>
 			      </rightWheel>
 		    </bot>
 		    <bot>
@@ -30,12 +30,12 @@
 			      <value>1</value>
 			      <name>Euler</name>
 			      <leftWheel>
-				        <slope>16.1562</slope>
-				        <intercept>100</intercept>
+				        <slope>6.5068</slope>
+				        <intercept>110</intercept>
 			      </leftWheel>
 			      <rightWheel>
-				        <slope>15.7985</slope>
-				        <intercept>105</intercept>
+				        <slope>7.6076</slope>
+				        <intercept>110</intercept>
 			      </rightWheel>
 		    </bot>
 		    <bot>
@@ -43,12 +43,12 @@
 			      <value>2</value>
 			      <name>Laplace</name>
 			      <leftWheel>
-				        <slope>17.7831</slope>
-				        <intercept>110</intercept>
+				        <slope>7.711</slope>
+				        <intercept>125</intercept>
 			      </leftWheel>
 			      <rightWheel>
-				        <slope>18.7594</slope>
-				        <intercept>95</intercept>
+				        <slope>7.5037</slope>
+				        <intercept>125</intercept>
 			      </rightWheel>
 		    </bot>
 	  </botTags>
@@ -145,6 +145,10 @@
 			      <name>SET_M_R</name>
 			      <value>26</value>
 		    </instruction>
+            <instruction>
+			      <name>GO_F</name>
+			      <value>28</value>
+		    </instruction>
 		    <instruction>
 			      <name>G_GO</name>
 			      <value>224</value>
@@ -160,6 +164,22 @@
 		    <instruction>
 			      <name>G_STOP</name>
 			      <value>227</value>
+		    </instruction>
+            <instruction>
+			      <name>G_GET_X</name>
+			      <value>228</value>
+		    </instruction>
+            <instruction>
+			      <name>G_GET_Y</name>
+			      <value>229</value>
+		    </instruction>
+            <instruction>
+			      <name>G_GET_A</name>
+			      <value>230</value>
+		    </instruction>
+            <instruction>
+			      <name>G_GO_F</name>
+			      <value>240</value>
 		    </instruction>
 	  </instructionSet>
 </config>

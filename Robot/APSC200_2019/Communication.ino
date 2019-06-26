@@ -6,11 +6,11 @@ void checkForIns() {
     insId = getInsId(data);
     #if DEBUG
     Serial.print("Instruction received: "); Serial.println(data, HEX);
-    Serial.print("ID: "); Serial.println(insId);
+    Serial.print("id: "); Serial.println(insId);
     #endif
-    // If instuction ID is for this bot
+    // If instuction id is for this bot
     if (insId == id) {
-      // Mask the instruction so ID bits are 0
+      // Mask the instruction so id bits are 0
       executeIns(data & 0x1F);
     }
     // If instruction is for all bots
@@ -45,13 +45,18 @@ byte getInsId(byte ins) {
  */
 void executeIns(byte ins) {
   byte msb = 0;
-  // If this is a 2 byte ins, need to isolate instruction and preserve most significant data bit
+  // If this is a 2 byte, single bot instruction, need to isolate instruction and preserve most significant data bit
   if ((ins & 0x10) && (getInsId(ins) != ALL_AGENTS)) {
     msb = ins & 0x1;
     ins = ins & 0x1E;
     #if DEBUG
       Serial.print("2 byte instruction. Actual ins: "); Serial.println(ins);
     #endif
+  }
+  // If this is a 2 byte, global instruction, isolate instruction and preserve MSB
+  else if (ins & 0x10) {
+    msb = ins & 0x1;
+    ins = ins & 0xFE;
   }
   switch (ins) {
     case 0x00:
@@ -101,6 +106,10 @@ void executeIns(byte ins) {
       setRightMotor(msb);
       confirm();
       break;
+    case 0x1C:
+      confirm();
+      goFixed(msb);
+      break;
     case 0xE0:
       confirm();
       go();
@@ -115,6 +124,19 @@ void executeIns(byte ins) {
     case 0xE3:
       confirm();
       dontGo();
+      break;
+    case 0xE4:
+      getX();
+      break;
+    case 0xE5:
+      getY();
+      break;
+    case 0xE6:
+      getAngle();
+      break;
+    case 0xF0:
+      confirm();
+      goFixed(msb);
       break;
     default:
       #if DEBUG
@@ -155,39 +177,55 @@ void confirm() {
 void reset() {
   asm volatile ("  jmp 0");
 }
-
 /*
  * All GET responses return data that is at most 13 bits wide
  */
 void getX() {
-  // Hopefully x fits into the allocated 13 bits
-  uint16_t x = (uint16_t)(xPosition*100);
+  // x is a 13-bit 2's complement signed integer
+  uint16_t x;
+  if (xPosition < 0) {
+    // Take magnitude of x*100, put into uint16, perform bitwise complement, truncate leading 3 bits, and add 1
+    x = (~((uint16_t)(-100*xPosition)) & 0x1FFF) + 1;
+  } else {
+    x = (uint16_t)(xPosition*100);
+  }
+  #if DEBUG
+  Serial.print("X value, bin: "); Serial.println(x, BIN);
+  #endif
   message[0] = (id<<5) | ((x>>8) & 0x1F);
   message[1] = x & 0xFF;
   XBee.write((char*)message, 2);
 }
 
 void getY() {
-  // Hopefully y also fits into 13 bits
-  uint16_t y = (uint16_t)(yPosition*100);
+  // y is a 13-bit 2's complement signed integer
+  uint16_t y;
+  if (yPosition < 0) {
+    // Take magnitude of y*100, put into uint16, perform bitwise complement, truncate leading 3 bits, and add 1
+    y = (~((uint16_t)(-100*yPosition)) & 0x1FFF) + 1;
+  } else {
+    y = (uint16_t)(yPosition*100);
+  }
   message[0] = (id<<5) | (y>>8 & 0x1F);
   message[1] = y & 0xFF;
   XBee.write((char*)message, 2);
 }
 
 void getAngle() {
-  uint16_t t = theta<0 ? (uint16_t)((theta+2*PI)*180/PI) : (uint16_t)(theta*180/PI);
+  //uint16_t t = theta<0 ? (uint16_t)((theta+2*PI)*180/PI) : (uint16_t)(theta*180/PI);
+  uint16_t t = (uint16_t) (theta*180/PI);
   #if DEBUG
   Serial.println("Angle in degrees:");
   Serial.println(t);
   #endif
-  message[0] = (id<<5) | (t>>8 & 0x1F);
+  // This number should always be unsigned integer < 360, so only need 9 bits
+  message[0] = (id<<5) | (t>>8 & 0x01);
   message[1] = t & 0xFF;
   XBee.write((char*)message, 2);
 }
 
 void getLeftTicks() {
-  int ticks = leftEncoder - lastLeftTicks;
+  int ticks = abs(leftEncoder - lastLeftTicks);
   lastLeftTicks = leftEncoder;
   message[0] = (id<<5) | (ticks>>8 & 0x1F);
   message[1] = ticks & 0xFF;
@@ -195,7 +233,7 @@ void getLeftTicks() {
 }
 
 void getRightTicks() {
-  int ticks = rightEncoder - lastRightTicks;
+  int ticks = abs(rightEncoder - lastRightTicks);
   lastRightTicks = rightEncoder;
   message[0] = (id<<5) | (ticks>>8 & 0x1F);
   message[1] = ticks & 0xFF;
@@ -244,11 +282,22 @@ void setHeading(byte msb) {
 }
 
 void setLeftMotor(byte msb) {
-  // This is not how signed integers work, really. if msb = 0, input is >0. else, input is <0
   leftInput = (msb ? -1 : 1) * getNextByte();
 }
 
 void setRightMotor(byte msb) {
   rightInput = (msb ? -1 : 1) * getNextByte();
+}
+
+void goFixed(byte msb) {
+  // Get duration of movement (data value is in centiseconds)
+  uint16_t duration = (msb<<8 | getNextByte())*10;
+  // Drive the motors
+  driveArdumoto(MOTOR_L, leftInput);
+  driveArdumoto(MOTOR_R, rightInput);
+  // Calculate endtime
+  endTime = millis() + duration;
+  // Set to true to indicate it needs to be stopped in future
+  isMovingFixed = true;
 }
 
