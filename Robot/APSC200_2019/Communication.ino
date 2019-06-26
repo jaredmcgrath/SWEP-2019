@@ -177,11 +177,6 @@ void confirm() {
 void reset() {
   asm volatile ("  jmp 0");
 }
-
-void goFixed() {
-  
-}
-
 /*
  * All GET responses return data that is at most 13 bits wide
  */

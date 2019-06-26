@@ -48,7 +48,7 @@ Vd = Vn;
 % Weighting matrix for importance of the three errors forward, lateral, theta
 Q = [8 0 0; 0 6 0; 0 0 15];
 % Cost matrix for V, W. High cost ensures we don't max out at 255 for every control input. 
-R = [3 0; 0 1];
+R = [3 0; 0 10];
 
 %% Control
 qd(:,3) = atan2(qd(:,2)-q(:,2), qd(:,1)-q(:,1));
@@ -99,8 +99,8 @@ controlInput = (controlInput.*slope) + (sign(controlInput).*slope);
 % Ensure wheel inputs are integers in the proper range
 controlInput(controlInput>255) = 255;
 controlInput(controlInput<-255) = -255;
-boostIdx = find(abs(controlInput) > 50 & abs(controlInput) < intercept);
-controlInput(boostIdx) = sign(controlInput(boostIdx)).*(intercept(boostIdx)+10);
+boostIdx = find(abs(controlInput) > 40 & abs(controlInput) < intercept);
+controlInput(boostIdx) = sign(controlInput(boostIdx)).*(intercept(boostIdx)+30);
 controlInput = round(controlInput);
 
 % Old, for reference

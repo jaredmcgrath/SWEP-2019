@@ -17,12 +17,12 @@
 			      <value>0</value>
 			      <name>Shannon</name>
 			      <leftWheel>
-				        <slope>12.5061</slope>
-				        <intercept>115</intercept>
+				        <slope>5.0342</slope>
+				        <intercept>135</intercept>
 			      </leftWheel>
 			      <rightWheel>
-				        <slope>11.5623</slope>
-				        <intercept>135</intercept>
+				        <slope>6.5113</slope>
+				        <intercept>110</intercept>
 			      </rightWheel>
 		    </bot>
 		    <bot>
@@ -30,12 +30,12 @@
 			      <value>1</value>
 			      <name>Euler</name>
 			      <leftWheel>
-				        <slope>16.1562</slope>
-				        <intercept>100</intercept>
+				        <slope>6.5068</slope>
+				        <intercept>110</intercept>
 			      </leftWheel>
 			      <rightWheel>
-				        <slope>15.7985</slope>
-				        <intercept>105</intercept>
+				        <slope>7.6076</slope>
+				        <intercept>110</intercept>
 			      </rightWheel>
 		    </bot>
 		    <bot>
@@ -43,12 +43,12 @@
 			      <value>2</value>
 			      <name>Laplace</name>
 			      <leftWheel>
-				        <slope>17.7831</slope>
-				        <intercept>110</intercept>
+				        <slope>7.711</slope>
+				        <intercept>125</intercept>
 			      </leftWheel>
 			      <rightWheel>
-				        <slope>18.7594</slope>
-				        <intercept>95</intercept>
+				        <slope>7.5037</slope>
+				        <intercept>125</intercept>
 			      </rightWheel>
 		    </bot>
 	  </botTags>

@@ -75,7 +75,7 @@ void getHeading(){
   mag.magnetic.x = magXScale*mag.magnetic.x + magXOffset;
   mag.magnetic.y = magYScale*mag.magnetic.y + magYOffset;
   // Compute heading
-  heading = atan2(mag.magnetic.y, mag.magnetic.x) + PI/2;
+  heading = atan2(mag.magnetic.y, mag.magnetic.x);
   if (heading < 0)
     heading += 2*PI;
   theta = heading - baseline;
