@@ -11,7 +11,7 @@
 #include <IRremote.h>   // Localization: Needed to read received IR patterns
 
 /////////////////////////////// Program Execution Options ///////////////////////////////////////////////
-#define DEBUG 0
+#define DEBUG 1
 
 /////////////////////////////// Program Parameters ///////////////////////////////////////////////
 // Localization Parameters
@@ -122,7 +122,7 @@ void setup(){
   #endif
   
   botSetup(); // Set's up Bot configuration
-  botCheck(); // Check's that setup was successful and bot is ready to function
+  //botCheck(); // Check's that setup was successful and bot is ready to function
   //localizationSetup(); // Performs required setup for Localization Process
   
   #if DEBUG
@@ -132,7 +132,9 @@ void setup(){
 
 //////////////////////////////// Main Loop /////////////////////////////////////////////////////////
 void loop() {
-  botLoop();
+  getHeading();
+  delay(1000);
+  //botLoop();
 }
 
 //////////////////////////////// Functions /////////////////////////////////////////////////////////
@@ -170,7 +172,7 @@ void botSetup(){
   attachInterrupt(digitalPinToInterrupt(ENCODER_R), rightEncoderTicks, RISING); //This is done on the Uno's interrupts pins so this syntax is valid, else use the PCI syntax 
 
   // Perform magnetometer calibration
-  calibrateMagnetometer();
+  //calibrateMagnetometer();
   
   #if DEBUG
   Serial.println(F("botSetup completed"));

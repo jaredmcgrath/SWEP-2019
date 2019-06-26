@@ -170,11 +170,26 @@ class Adafruit_LSM9DS0
       float y;
       float z;
     } lsm9ds0Vector_t;
+
+    /* CUSTOM */
+    /* Written to support raw int16_t values in a struct */
+    typedef struct lsm9ds0RawData_s
+    {
+      int16_t x;
+      int16_t y;
+      int16_t z;
+    } lsm9ds0RawData_t;
     
     lsm9ds0Vector_t accelData;    // Last read accelerometer data will be available here
     lsm9ds0Vector_t magData;      // Last read magnetometer data will be available here
     lsm9ds0Vector_t gyroData;     // Last read gyroscope data will be available here
     int16_t         temperature;  // Last read temperzture data will be available here
+
+    /* CUSTOM */
+    /* Raw data values for each sensor */
+    lsm9ds0RawData_t accelRaw;
+    lsm9ds0RawData_t magRaw;
+    lsm9ds0RawData_t gyroRaw;
     
     bool    begin       ( void );
     void    read        ( void );

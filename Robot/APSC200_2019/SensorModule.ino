@@ -71,22 +71,26 @@ void displaySensorDetails(void)
 void getHeading(){
   // Get sensor snapshot
   lsm.getEvent(&accel, &mag, &gyro, &temp);
-  // Shift the magnetometer data for calibration
-  mag.magnetic.x = magXScale*mag.magnetic.x + magXOffset;
-  mag.magnetic.y = magYScale*mag.magnetic.y + magYOffset;
-  // Compute heading
-  heading = atan2(mag.magnetic.y, mag.magnetic.x);
-  if (heading < 0)
-    heading += 2*PI;
-  theta = heading - baseline;
-  if (theta < 0)
-    theta += 2*PI;
 
-  #if DEBUG
-  Serial.print("X: "); Serial.print(mag.magnetic.x, 5); Serial.print(" Y: "); Serial.println(mag.magnetic.y, 5);
-  Serial.print("Heading: "); Serial.print(heading*180/PI); Serial.print(" Theta: "); Serial.println(theta*180/PI);
-  Serial.print("Heading: "); Serial.print(heading); Serial.print(" Theta: "); Serial.println(theta);
-  #endif
+  Serial.print("X: "); Serial.print(mag.magnetic.x); Serial.print(" Y: "); Serial.print(mag.magnetic.y); Serial.print(" Z: "); Serial.println(mag.magnetic.z); 
+
+  
+  // Shift the magnetometer data for calibration
+//  mag.magnetic.x = magXScale*mag.magnetic.x + magXOffset;
+//  mag.magnetic.y = magYScale*mag.magnetic.y + magYOffset;
+//  // Compute heading
+//  heading = atan2(mag.magnetic.y, mag.magnetic.x);
+//  if (heading < 0)
+//    heading += 2*PI;
+//  theta = heading - baseline;
+//  if (theta < 0)
+//    theta += 2*PI;
+//
+//  #if DEBUG
+//  Serial.print("X: "); Serial.print(mag.magnetic.x, 5); Serial.print(" Y: "); Serial.println(mag.magnetic.y, 5);
+//  Serial.print("Heading: "); Serial.print(heading*180/PI); Serial.print(" Theta: "); Serial.println(theta*180/PI);
+//  Serial.print("Heading: "); Serial.print(heading); Serial.print(" Theta: "); Serial.println(theta);
+//  #endif
 }
 
 // calibrateMagnetometer sets the magX/magY offset and scale values
@@ -128,4 +132,3 @@ void calibrateMagnetometer() {
   Serial.print("magXScale: "); Serial.print(magXScale); Serial.print(" magYScale: "); Serial.println(magYScale);
   #endif
 }
-

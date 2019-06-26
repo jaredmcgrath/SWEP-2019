@@ -169,6 +169,11 @@ void Adafruit_LSM9DS0::readAccel() {
   accelData.x = xhi;
   accelData.y = yhi;
   accelData.z = zhi;
+
+  // CUSTOM
+  accelRaw.x = xhi;
+  accelRaw.y = yhi;
+  accelRaw.z = zhi;
 }
 
 void Adafruit_LSM9DS0::readMag() {
@@ -192,6 +197,11 @@ void Adafruit_LSM9DS0::readMag() {
   magData.x = xhi;
   magData.y = yhi;
   magData.z = zhi;
+
+  // CUSTOM
+  magRaw.x = xhi;
+  magRaw.y = yhi;
+  magRaw.z = zhi;
 }
 
 void Adafruit_LSM9DS0::readGyro() {
@@ -216,6 +226,11 @@ void Adafruit_LSM9DS0::readGyro() {
   gyroData.x = xhi;
   gyroData.y = yhi;
   gyroData.z = zhi;
+
+  // CUSTOM
+  gyroRaw.x = xhi;
+  gyroRaw.y = yhi;
+  gyroRaw.z = zhi;
 }
 
 void Adafruit_LSM9DS0::readTemp() {
