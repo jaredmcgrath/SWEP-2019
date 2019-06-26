@@ -1,7 +1,7 @@
 /////////////////////////////// Set up the libraries ///////////////////////////////////////////////
 // IMPORTANT: "#define NO_PORTD_PINCHANGES" must be before "#include <SoftSerialFix.h>"
 #define NO_PORTD_PINCHANGES // to indicate that port d will not be used for pin change interrupts
-#include <PinChangeInterrupt.h> //Needed with the above line to have more interrupts that dont interfere with the Xbee --- WAS PinChangeInt.h before, I couldn't find that library, but found PinChangeInterrupt instead
+#include <PinChangeInt.h> //Needed with the above line to have more interrupts that dont interfere with the Xbee --- WAS PinChangeInt.h before, I couldn't find that library, but found PinChangeInterrupt instead
 #include <SoftSerialFix.h> //Communication: Needed to create a software serial port for the Xbee
 #include "Wire.h"
 #include "math.h"
@@ -80,6 +80,7 @@ unsigned long usRecvTime;
 unsigned long beaconStartTime;
 unsigned long tdot; // Time difference of transmission
 long tdoa; // Time difference of arrival. Signed since it can be a (small) negative due to inaccuracies 
+long beaconDist; // distance from beacon to bot
 int beaconDistances[NUM_BEACONS]; // [mm] Array of distances to be sent back to MATLAB
 uint8_t beaconErrorCodes[NUM_BEACONS]; // Array of error codes associated with distance measurements. To be sent back to MATLAB
 
@@ -98,8 +99,8 @@ byte id = 0;
 #define ALL_AGENTS 7
 
 ////////////////////////////////////////////////////////// Object Declarations //////////////////////////////////////////////////////////
-//IRrecv irrecv(irPin); // Set up the Infrared receiver object to get its data
-//decode_results irData; // An object for the infrared data to be stored and decoded
+IRrecv irrecv(IR_INPUT); // Set up the Infrared receiver object to get its data
+decode_results irData; // An object for the infrared data to be stored and decoded
 Adafruit_LSM9DS0 lsm = Adafruit_LSM9DS0(); //An object for the sensor module, to be accessed to get the data
 SoftSerialFix XBee(4,5); //The software created serial port to communicate through the Xbee
 
