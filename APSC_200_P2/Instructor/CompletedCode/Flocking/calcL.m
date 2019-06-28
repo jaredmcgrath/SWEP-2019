@@ -1,14 +1,14 @@
 function L = calcL(A)
 %% calcL
-% Calculates Laplacian Matrix from adjacency matrix.
+% Calculates the Laplacian matrix given the adjacency matrix.
 % 
 % Parameters:
 %   A
-%     Adjacency matrix
+%     The n-by-n adjacency matrix
 %
 % Returns:
 %   L
-%     Laplacian Matrix
+%     The n-by-n Laplacian matrix
 
 numAgents = size(A,1);
 D = diag(A*ones(numAgents,1));

@@ -1,12 +1,11 @@
 function L = calcL(A)
 %% calcL
-% Calculates Laplacian Matrix from adjacency matrix.
+% Calculates the Laplacian matrix given the adjacency matrix.
 % 
 % Parameters:
 %   A
-%     Adjacency matrix
+%     The n-by-n adjacency matrix
 %
 % Returns:
 %   L
-%     Laplacian Matrix
-%% Your Code Below
+%     The n-by-n Laplacian matrix

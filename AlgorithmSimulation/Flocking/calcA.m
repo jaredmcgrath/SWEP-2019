@@ -3,7 +3,7 @@ function A = calcA(k, sigma, beta, agentPosition)
 % This function calculates the A matrix based on the given equation using
 % the user defined parameters and the positions of each agent
 %   The equation to calculate A(i,j) is
-%                               K
+%                               k
 %               A = -----------------------------
 %                   (sigma^2 + dist(i,j)^2)^beta
 %
@@ -15,11 +15,12 @@ function A = calcA(k, sigma, beta, agentPosition)
 %   beta
 %     Exponent
 %   agentPosition
-%     n-by-2 position matrix for n agents in [x1 y1; x2 y2;...] format
+%     n-by-2 vector of (x,y) positions for n agents. This is the 'state'
+%     vector of the agents, q, on which the adjacency matrix is calculated
 %
 % Returns:
 %   A
-%     Adjacnecy matrix
+%     The n-by-n adjacnecy matrix
 
 % Calculate the distance an agent is from every other agent
 dist = pdist2(agentPosition,agentPosition); 

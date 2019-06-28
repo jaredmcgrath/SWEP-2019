@@ -1,8 +1,9 @@
-function leaderVelocity = calcLeaderVelocity(velocityFunction,duration,...
-    timeStep)
+function leaderVelocity = calcLeaderVelocity(velocityFunction,duration,dt)
 %% calcLederVelocity
-% Calculates the velocity of the leader agent over the duration of
-% the simulation
+% Calculates the velocity of the leader agent for all iterations of the
+% simulation. Note that this function is called once at the beginning of
+% the program, and the leaderVelocity returned should contain the leader's
+% velocity at each discrete time step.
 %
 % Parameters:
 %   velocityFunction
@@ -10,12 +11,11 @@ function leaderVelocity = calcLeaderVelocity(velocityFunction,duration,...
 %     representing the parametric velocity functions in x and y of the
 %     leader
 %   duration
-%     Number of iterations for which the simulation will run
-%   timeStep
-%     Simulated duration of each iteration
+%     Total duration the simulation will run for
+%   dt
+%     Amount of time simulated in each iteration
 %
 % Returns:
 %   leaderVelocity
-%     (duration+1)-by-2 matrix of the velocity function evaluated from t=0 
-%     to t=duration*timeStep in discrete time steps
-%% Your Code Below
+%     (duration/dt + 1)-by-2 matrix of the velocity function evaluated from
+%     t=0 to t=duration in discrete time steps of dt
