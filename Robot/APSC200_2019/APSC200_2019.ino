@@ -8,27 +8,9 @@
 #include <I2Cdev.h> //Sensing/Communication: Needed to have communication to the sensor module
 #include <Adafruit_Sensor.h> //Sensing: Needed to get the sensor data from the accel, gyro, compass and temp unit
 #include <Adafruit_LSM9DS0.h> //Sensing: Needed to process the specific sensor's (LSM9DS0) raw data into units
-#include <IRremote.h>   // Localization: Needed to read received IR patterns
 
 /////////////////////////////// Program Execution Options ///////////////////////////////////////////////
 #define DEBUG 1
-
-/////////////////////////////// Program Parameters ///////////////////////////////////////////////
-// Localization Parameters
-// Constants
-#define DATA_PADDING_VALUE 2147483648 // (0x80000000) added before transmission to ensure that the transmission is 32 bits
-#define NUM_BEACONS 5 // Number of Beacons
-#define ZERO_DIST_TIME_DELAY 22000 // The time delay of the system when taking a measurement from 0mm (it's a fudge factor)
-float ambientTemp = 17; // [deg C] will eventually be determined in real-time. Used to make time to distance measurements using the speed of sound more accurate
-
-// Localization Parameters
-#define US_NOMINAL_VOLTAGE_BOUND 20   // Unit is (probably) equivalent to 2mV. Any reading greater than this value on the US sensor is deemed to be an incoming US signal
-#define US_TIMEOUT_THRESHOLD 400000   // [usec] Number of microseconds waited for US reception before timing out (previously #define US_TIMEOUT_THRESHOLD 250000)
-#define IR_TIMEOUT_THRESHOLD 650000  // [usec] Number of microseconds waited for IR reception before timing out (previously 300000)
-#define BEACON_TIMEOUT_THRESHOLD 1500000  // [usec] Number of microseconds waited for beacon to ping before timing out
-#define MAX_POSSIBLE_TDOT 1500000 // [usec] The largest amount of time it would take for the RPi to send the first IR and then US signal
-#define MIN_POSSIBLE_TDOT 50000   // [usec] The shortest amount of time it would take for the RPi to send the first IR and the US signal
-#define MOVEMENT_DURATION 1000    // [msec] the amount of time that the robots will drive for before they stop (1000 for 1 second)
 
 /////////////////////////////// Define all needed pins ///////////////////////////////////////////////
 #define MOTOR_R 0 // right motor (A)
@@ -39,8 +21,6 @@ float ambientTemp = 17; // [deg C] will eventually be determined in real-time. U
 #define DIRA 8 // Direction control for motor A
 #define PWMA 9  // PWM control (speed) for motor A
 #define PWMB 10 // PWM control (speed) for motor B
-#define IR_INPUT 11 // Input port for IR Transmission (Localization)
-#define US_INPUT A0 // Input for the US Transmission (Localization)
 #define BATTERY_PIN A1   // battery level indicator pin. Would be hooked up to votlage divider from 9v barrel jack, but currently not implemented
 
 /////////////////////////////// Sensor Variables ///////////////////////////////////////////////
@@ -48,6 +28,7 @@ sensor_t accelSetup, magSetup, gyroSetup, tempSetup; //Variables used to setup t
 sensors_event_t accel, mag, gyro, temp; // Variables to store current sensor event data
 float heading, baseline = 0; // Variables to store the calculated heading and the baseline variable (Baseline may be unnecessary)
 bool isHeadingSet = false;
+
 // Variables used to calibrate magnetometer
 float maxX = 0, maxY = 0, minX = 0, minY = 0;
 float magXOffset = 0, magYOffset = 0, magXScale = 1, magYScale = 1;
@@ -61,7 +42,6 @@ int lastLeftTicks = 0, lastRightTicks = 0; // Ticks upon last call of getLeftTic
 float leftRads = 0, rightRads = 0; // Stores the left and right radians of the wheels (from encoder values)
 float xPosition = 0, yPosition = 0; // Stores the robot's current x and y position estimate from the encoders
 float theta = 0; // Stores the current angle of the robot, from the gyro
-float gyroZ; //stores the Z component of the gyroscope so it can be manipulated into an angle
 unsigned long oldTime = 0, currentTime = 0; // Variables to timestamp the loops to calculate position
 
 ////////////////////////////// Localization Variables ////////////////////////////////////////////
