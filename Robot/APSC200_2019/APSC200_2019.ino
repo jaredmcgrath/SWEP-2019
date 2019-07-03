@@ -58,7 +58,9 @@ int leftEncoder = 0, rightEncoder = 0; // Stores the encoder values for the curr
 int lastLeftTicks = 0, lastRightTicks = 0; // Ticks upon last call of getLeftTicks/getRightTicks
 
 /////////////////////////////// Position Variables ///////////////////////////////////////////////
+float rWheel = 0.065/2, rChasis = 0.1;// Radius of the robot wheels
 float leftRads = 0, rightRads = 0; // Stores the left and right radians of the wheels (from encoder values)
+float deltaTheta; // change in theta for each iteration of robot motion
 float xPosition = 0, yPosition = 0; // Stores the robot's current x and y position estimate from the encoders
 float theta = 0; // Stores the current angle of the robot, from the gyro
 float gyroZ; //stores the Z component of the gyroscope so it can be manipulated into an angle
@@ -206,7 +208,7 @@ void botCheck(){
 //action is performed
 void botLoop(){
   // Update orientation
-  getHeading();
+  //getHeading();
   // Update bot position using encoders/dead reckoning
   positionCalc();
   // Check for any instructions
