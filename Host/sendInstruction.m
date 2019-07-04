@@ -122,8 +122,16 @@ switch instruction
             [rslt, count] = fread(config.xbee,2,'uint8');
             if count==2, break; end
         end
+        response = bitor(bitshift(bitand(rslt(1),31),8),rslt(2));
         % Convert back to decimal
-        response = bitor(bitshift(bitand(rslt(1),31),8),rslt(2))/100;
+        if bitand(response,4096)
+            % Reverse 2's complement, mask the leading 3 ID bits
+            % Then divide by 100, and negate result
+            response = -double(bitand(bitcmp(int16(response-1)),8191))/100;
+        else
+            % If positive, just mask the leading 3 ID bits and divide
+            response = bitand(response,8191)/100;
+        end
     % SET instructions
     case {'SET_X','SET_Y'}
         % Keep 2 decimals, truncate remainder

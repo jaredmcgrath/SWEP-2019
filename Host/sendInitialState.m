@@ -1,4 +1,4 @@
-function sendInitialState(config, positions, tags, heading)
+function sendInitialState(config, positions, tags, theta)
 %% sendInitialState
 % Takes the initial position info for each bot and an XBee serial port
 % object, sends the info, then asks all bots to confirm their status
@@ -24,6 +24,6 @@ numBots = length(tags);
 for i = 1:numBots
     sendInstruction(config, 'SET_X', tags(i), positions(i,1));
     sendInstruction(config, 'SET_Y', tags(i), positions(i,2));
-    sendInstruction(config, 'SET_H', tags(i), heading);
+    sendInstruction(config, 'SET_H', tags(i), theta(i));
 end
 sendInstruction(config, 'G_CONF', numBots);

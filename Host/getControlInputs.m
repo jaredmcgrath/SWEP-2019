@@ -41,7 +41,7 @@ qd = zeros(size(q));
 qd(:,1:2) = desiredPosition;
 % Desired velocity in m/s (constant, so we can decide what this needs to be)
 % TODO: Move to config file?
-Vn = 0.2*ones(size(q,1),1);
+Vn = 0.3*ones(size(q,1),1);
 Vd = Vn;
 
 %% Linear Quadratic Regulator Conditions
@@ -99,8 +99,8 @@ controlInput = (controlInput.*slope) + (sign(controlInput).*slope);
 % Ensure wheel inputs are integers in the proper range
 controlInput(controlInput>255) = 255;
 controlInput(controlInput<-255) = -255;
-boostIdx = find(abs(controlInput) > 40 & abs(controlInput) < intercept);
-controlInput(boostIdx) = sign(controlInput(boostIdx)).*(intercept(boostIdx)+30);
+% boostIdx = find(abs(controlInput) > 40 & abs(controlInput) < intercept);
+% controlInput(boostIdx) = sign(controlInput(boostIdx)).*(intercept(boostIdx)+30);
 controlInput = round(controlInput);
 
 % Old, for reference

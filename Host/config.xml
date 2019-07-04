@@ -17,12 +17,12 @@
 			      <value>0</value>
 			      <name>Shannon</name>
 			      <leftWheel>
-				        <slope>6.9164</slope>
-				        <intercept>145</intercept>
+				        <slope>12.8322</slope>
+				        <intercept>95</intercept>
 			      </leftWheel>
 			      <rightWheel>
-				        <slope>7.0963</slope>
-				        <intercept>145</intercept>
+				        <slope>Inf</slope>
+				        <intercept>150</intercept>
 			      </rightWheel>
 		    </bot>
 		    <bot>

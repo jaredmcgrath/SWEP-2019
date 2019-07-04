@@ -107,16 +107,16 @@ pathFileName = 'agentData.mat';
 
 %% XBEE SETUP
 % Set up the Xbee connection
-config.xbee = serial('/dev/tty.usbserial-DN01F2NX','Terminator','CR', 'Timeout', 1);
+config.xbee = serial('COM8','Terminator','CR', 'Timeout', 1);
 
 % END XBEE SETUP
 
 %% BOT SETUP
 % Call the initializeBotState to get list of bots being worked with, and
 % their states
-[position, tags, xHeading] = initializeBotState(config);
+[position, tags, theta] = initializeBotState(config);
 % Send initial positions to bots
-sendInitialState(config, position, tags, xHeading);
+sendInitialState(config, position, tags, theta);
 disp('Bots setup successfully')
 
 % END BOT SETUP
