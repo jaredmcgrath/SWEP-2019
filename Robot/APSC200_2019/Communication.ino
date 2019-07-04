@@ -95,7 +95,7 @@ void executeIns(byte ins) {
       confirm();
       break;
     case 0x16:
-      setHeading(msb);
+      setA(msb);
       confirm();
       break;
     case 0x18:
@@ -270,15 +270,15 @@ void setY(byte msb) {
   yPosition = y/100.0;
 }
 
-void setHeading(byte msb) {
-  uint16_t h = msb<<8 | getNextByte();
-  baseline = h>180 ? (h-360)*PI/180 : h*PI/180;
+void setA(byte msb) {
+  uint16_t t = msb<<8 | getNextByte();
+  theta = t*PI/180;
   #if DEBUG
-  Serial.println("Heading set");
-  Serial.println(baseline);
+  Serial.println("Theta set");
+  Serial.println(theta);
   #endif
   // IMPORTANT: Setting isHeadingSet true allows botCheck to complete
-  isHeadingSet = true;
+  isThetaSet = true;
 }
 
 void setLeftMotor(byte msb) {
@@ -300,4 +300,3 @@ void goFixed(byte msb) {
   // Set to true to indicate it needs to be stopped in future
   isMovingFixed = true;
 }
-

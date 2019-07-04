@@ -20,15 +20,14 @@ void positionCalc(){
   leftRads = (leftEncoder - oldLeftEncoder) * 2 * PI / 192;
   rightRads = (rightEncoder - oldRightEncoder) * 2 * PI / 192;
 
-  // calculates the change in theta for the iteration of robot motion.
-  deltaTheta = (rWheel /(2 * rChasis)) * (rightRads - leftRads);
-
-  // Using the angular velocity of the center of the robot, the angel that the robot has rotated can be calcualted.
-  theta = theta + deltaTheta * (180 / PI);
-
   // Calcualte the x and y position of the robot.
   xPosition = xPosition + cos(theta)*rWheel*0.5*(leftRads+rightRads);
   yPosition = yPosition + sin(theta)*rWheel*0.5*(leftRads+rightRads);
+
+  // calculates the change in theta for the iteration of robot motion.
+  theta += (rWheel /(2 * rChasis)) * (rightRads - leftRads);
+
+  theta = theta > 2*PI ? theta - 2*PI : (theta < 0 ? theta + 2*PI : theta);
 
   oldLeftEncoder = leftEncoder;
   oldRightEncoder = rightEncoder;

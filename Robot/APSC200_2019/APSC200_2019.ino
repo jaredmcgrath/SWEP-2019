@@ -8,7 +8,7 @@
 #include <I2Cdev.h> //Sensing/Communication: Needed to have communication to the sensor module
 #include <Adafruit_Sensor.h> //Sensing: Needed to get the sensor data from the accel, gyro, compass and temp unit
 #include <Adafruit_LSM9DS0.h> //Sensing: Needed to process the specific sensor's (LSM9DS0) raw data into units
-#include <IRremote.h>   // Localization: Needed to read received IR patterns
+//#include <IRremote.h>   // Localization: Needed to read received IR patterns
 
 /////////////////////////////// Program Execution Options ///////////////////////////////////////////////
 #define DEBUG 1
@@ -46,8 +46,8 @@ float ambientTemp = 17; // [deg C] will eventually be determined in real-time. U
 /////////////////////////////// Sensor Variables ///////////////////////////////////////////////
 sensor_t accelSetup, magSetup, gyroSetup, tempSetup; //Variables used to setup the sensor module
 sensors_event_t accel, mag, gyro, temp; // Variables to store current sensor event data
-float heading, baseline = 0; // Variables to store the calculated heading and the baseline variable (Baseline may be unnecessary)
-bool isHeadingSet = false;
+//float heading, baseline = 0; // Variables to store the calculated heading and the baseline variable (Baseline may be unnecessary)
+bool isThetaSet = false;
 // Variables used to calibrate magnetometer
 float maxX = 0, maxY = 0, minX = 0, minY = 0;
 float magXOffset = 0, magYOffset = 0, magXScale = 1, magYScale = 1;
@@ -58,7 +58,7 @@ int leftEncoder = 0, rightEncoder = 0; // Stores the encoder values for the curr
 int lastLeftTicks = 0, lastRightTicks = 0; // Ticks upon last call of getLeftTicks/getRightTicks
 
 /////////////////////////////// Position Variables ///////////////////////////////////////////////
-float rWheel = 0.065/2, rChasis = 0.1;// Radius of the robot wheels
+float rWheel = 0.0315, rChasis = 0.063;// Radius of the robot wheels
 float leftRads = 0, rightRads = 0; // Stores the left and right radians of the wheels (from encoder values)
 float deltaTheta; // change in theta for each iteration of robot motion
 float xPosition = 0, yPosition = 0; // Stores the robot's current x and y position estimate from the encoders
@@ -106,12 +106,12 @@ float loopTime;
  */
 byte message[2];
 #define ALL_AGENTS 7
-#define ID 2
+#define ID 0
 int id = ID;
 
 ////////////////////////////////////////////////////////// Object Declarations //////////////////////////////////////////////////////////
-IRrecv irrecv(IR_INPUT); // Set up the Infrared receiver object to get its data
-decode_results irData; // An object for the infrared data to be stored and decoded
+//IRrecv irrecv(IR_INPUT); // Set up the Infrared receiver object to get its data
+//decode_results irData; // An object for the infrared data to be stored and decoded
 Adafruit_LSM9DS0 lsm = Adafruit_LSM9DS0(); //An object for the sensor module, to be accessed to get the data
 SoftSerialFix XBee(4,5); //The software created serial port to communicate through the Xbee
 
@@ -124,7 +124,7 @@ void setup(){
   #endif
   
   botSetup(); // Set's up Bot configuration
-  //botCheck(); // Check's that setup was successful and bot is ready to function
+  botCheck(); // Check's that setup was successful and bot is ready to function
   //localizationSetup(); // Performs required setup for Localization Process
   
   #if DEBUG
@@ -134,9 +134,10 @@ void setup(){
 
 //////////////////////////////// Main Loop /////////////////////////////////////////////////////////
 void loop() {
-  getHeading();
-  delay(1000);
-  //botLoop();
+//  lsm.getEvent(&accel, &mag, &gyro, &temp);
+//  Serial.print("X: "); Serial.print(gyro.gyro.x); Serial.print(" Y: "); Serial.print(gyro.gyro.y); Serial.print(" Z: "); Serial.println(gyro.gyro.z); 
+//  delay(100);
+  botLoop();
 }
 
 //////////////////////////////// Functions /////////////////////////////////////////////////////////
@@ -189,11 +190,11 @@ void botCheck(){
 
   // Continue checking for instructions while the heading hasn't been set yet
   // (the heading should be the last variable initialized)
-  while(!isHeadingSet){
+  while(!isThetaSet){
     delay(20);
     checkForIns();
   }
-  getHeading();
+  //getHeading();
   
   #if DEBUG
   Serial.print(F("Inital X ")); Serial.println(xPosition); 
