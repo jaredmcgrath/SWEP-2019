@@ -1,19 +1,20 @@
-function agentVelocity = updateVelocity(L, timeStep, agentVelocity)
+function agentVelocity = updateVelocity(L, dt, agentVelocity)
 %% updateVelocity
-% Updates the velocity of each agent using the Laplacian matrix
+% Updates the velocity of each agent using dynamics governed by the
+% Laplacian matrix.
 %
 % Parameters:
 %   L
-%     Laplacian matrix
-%   timeStep
-%     Assumed time step between each iteration
+%     The n-by-n Laplacian matrix
+%   dt
+%     The simulated time step
 %   agentVelocity
-%     n-by-2 matrix of n agent velocities in [x1 y1; x2 y2; ...] format,
-%     before update
+%     n-by-2 vector of velocities for n agents, in [x1 y1; x2 y2; ...]
+%     format, before the update
 %
 % Returns:
 %   agentVelocity
-%     n-by-2 matrix of n agent velocities in [x1 y1; x2 y2; ...] format,
-%     after update
+%     n-by-2 vector of velocities for n agents, in the above format,
+%     after the update
 
-agentVelocity = agentVelocity - timeStep*L*agentVelocity;
+agentVelocity = agentVelocity - dt*L*agentVelocity;

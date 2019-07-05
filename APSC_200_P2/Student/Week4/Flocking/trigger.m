@@ -1,12 +1,12 @@
-function [trigger] = trigger(iteration)
+function trigger = trigger(time)
 %% trigger
-% Trigger sequence for simualtion
+% Trigger sequence for simualtion. If agents should communicate/update 
+% their velocities at the current time, return 1. Otherwise, return 0.
 %
 % Parameters:
-%   iteration
-%     Current simulation iteration
+%   time
+%     Current time
 %
 % Return:
 %   trigger
 %     1 is trigger activated, 0 otherwise
-%% Your Code Below

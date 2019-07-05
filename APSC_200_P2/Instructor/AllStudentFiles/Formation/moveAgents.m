@@ -1,9 +1,8 @@
-function agentData = moveAgents(agentData, L,...
-    iteration, timeStep)
+function agentData = moveAgents(agentData, L, time, dt)
 %% moveAgents
 % Move agents (and update any agent info, including enegry) whilst taking
 % into account the Laplacian, time delays (tau), offsets, energy, the 
-% current iteration, and time step.
+% current time, and time step.
 %
 % Parameters:
 %   agentData
@@ -16,12 +15,11 @@ function agentData = moveAgents(agentData, L,...
 %       column 6 is energy
 %   L
 %     Laplacian matrix for this iteration
-%   iteration
-%     Current simulation iteration
-%   timeStep
-%     Factor that slows down convergence
+%   time
+%     Current (simulated) time
+%   dt
+%     Simulated time step over which the agents will move
 %
 % Returns:
 %   agentData
-%     Agent positions after moving in (x,y) format
-
+%     n-by-6 vector of agent data after update, in the above format

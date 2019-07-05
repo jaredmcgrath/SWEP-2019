@@ -1,6 +1,6 @@
 function A = calcA(agentPosition)
 %% calcA
-% Calculates the adjacency matrix, A, from agent state held in agentData
+% Calculates the adjacency matrix, A, from the agent state
 %
 % Parameters:
 %   agentPosition
@@ -9,4 +9,4 @@ function A = calcA(agentPosition)
 %
 % Returns:
 %   A
-%     Adjacency matrix
+%     The n-by-n adjacency matrix
