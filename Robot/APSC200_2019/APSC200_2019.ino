@@ -84,7 +84,7 @@ unsigned long beaconStartTime;
 long beaconDist;
 unsigned long tdot; // Time difference of transmission
 long tdoa; // Time difference of arrival. Signed since it can be a (small) negative due to inaccuracies 
-long beaconDist; // distance from beacon to bot
+// long beaconDist; // distance from beacon to bot
 int beaconDistances[NUM_BEACONS]; // [mm] Array of distances to be sent back to MATLAB
 uint8_t beaconErrorCodes[NUM_BEACONS]; // Array of error codes associated with distance measurements. To be sent back to MATLAB
 

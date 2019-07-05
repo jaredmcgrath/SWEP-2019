@@ -1,42 +1,5 @@
 /////////////LOCALIZATION///////////
 
-/*
-This is the code I tried writing on JUNE 13, 2019 for the localization before receiving Hugh's code from 2018
-// US Input at ANALOG INPUT Pin 0
-// IR Input at DIGITAL INPUT Pin 11
-
-int calcDistance(void)
-{
-  // The idea here is that it checks if a transmission has been recieved from a beacon
-  // if an IR transmission is recieved then it will wait for the paired US signal to arrive
-  // PROBLEMS: Have it wait for a signal to arrive? A delay/wait of some sort?
-  //           How to differentiate between which beacon is transmitting?
-  //              (xbee indicate, ir signal indicator, both (as a check)?) 
-
-  int waitTimer = 5; // defines how long program waits for an IR input
-  unsigned long timeStart = millis(); // time before program begins waiting for IR transmission
-  unsigned long timeIRArrival = timeStart; // time when IR transmission arrives
-  
-  // Wait 5 milliseconds for an IR transmission to be recieved.
-  while(digitalRead(IR_INPUT)== LOW && timeIRArrival < timeStart + waitTimer)
-  {
-    timeIRArrival = millis();
-  }
-
-  // Runs if IR transmission was recieved
-  if (timeIRArrival < timeStart + waitTimer)
-  {
-    analogRead(US_INPUT);  
-    unsigned long timeDifferenceOfArrival = millis() - timeIRArrival; //calculates in milliseconds the time difference between the IR signal and the US signal arriving
-    return dist = (float)343*timeDifferenceOfArrival;
-  }
-  else
-  {
-    return 0;
-  }
-}
-*/
-
 //////////////////////HUGH'S LOCALIZATION CODE///////////////////////////
 
 void localizationSetup()
