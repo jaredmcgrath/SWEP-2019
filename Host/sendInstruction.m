@@ -132,6 +132,16 @@ switch instruction
             % If positive, just mask the leading 3 ID bits and divide
             response = bitand(response,8191)/100;
         end
+    case 'GET_POS'
+        while true
+            fwrite(config.xbee,B0);
+            [rslt, count] = fread(config.xbee,17,'uint8');
+            if count==17, break; end
+        end
+        rslt = uint8(rslt);
+        x = typecast(rslt(2:5)','single');
+        response = [typecast(rslt(2:5)','single') typecast(rslt(6:9)','single') ...
+            typecast(rslt(10:13)','single') double(typecast(rslt(14:17)','uint32'))/1000];
     % SET instructions
     case {'SET_X','SET_Y'}
         % Keep 2 decimals, truncate remainder

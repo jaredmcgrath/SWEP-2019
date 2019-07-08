@@ -37,7 +37,7 @@ int leftEncoder = 0, rightEncoder = 0; // Stores the encoder values for the curr
 int lastLeftTicks = 0, lastRightTicks = 0; // Ticks upon last call of getLeftTicks/getRightTicks
 
 /////////////////////////////// Position Variables ///////////////////////////////////////////////
-float rWheel = 0.0315, rChasis = 0.063;// Radius of the robot wheels
+float rWheel = 0.034, rChasis = 0.08;// Radius of the robot wheels
 float xPosition = 0, yPosition = 0; // Stores the robot's current x and y position estimate from the encoders
 float theta = 0; // Stores the current angle of the robot, from the gyro
 
@@ -50,6 +50,17 @@ bool isMovingFixed = false;
 // Clock value to stop movement at
 unsigned long endTime;
 
+typedef struct {
+  byte id;
+  float x,y,theta;
+  unsigned long timeStamp;
+} botPosStruct;
+
+typedef union {
+  byte bytes[17];
+  botPosStruct pos;
+} bytePos;
+
 /////////////////////////////// Agent Tag Data - CHANGE FOR EACH ROBOT ///////////////////////////////////////////////
 /*
  * ID's should be numbered 0-6 inclusively
@@ -57,11 +68,11 @@ unsigned long endTime;
 byte message[2];
 #define ALL_AGENTS 7
 #define ID 0
-int id = ID;
+byte id = ID;
 
 ////////////////////////////////////////////////////////// Object Declarations //////////////////////////////////////////////////////////
 Adafruit_LSM9DS0 lsm = Adafruit_LSM9DS0(); //An object for the sensor module, to be accessed to get the data
-SoftSerialFix XBee(4,5); //The software created serial port to communicate through the Xbee
+SoftSerialFix xBee(4,5); //The software created serial port to communicate through the Xbee
 
 //////////////////////////////// Setup ////////////////////////////////////////////////////////////
 
@@ -95,7 +106,7 @@ void botSetup(){
   #endif
 
   // Initialize serial port via XBee
-  XBee.begin(9600);      //Set the baud rate for the software serial port
+  xBee.begin(9600);      //Set the baud rate for the software serial port
   
   // Ensure sensor module is intact
   if(!lsm.begin()) {

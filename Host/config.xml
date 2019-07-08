@@ -125,6 +125,10 @@
 			      <name>STOP</name>
 			      <value>7</value>
 		    </instruction>
+            <instruction>
+			      <name>GET_POS</name>
+			      <value>8</value>
+		    </instruction>
 		    <instruction>
 			      <name>SET_X</name>
 			      <value>18</value>
