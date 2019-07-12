@@ -125,61 +125,73 @@
 			      <name>STOP</name>
 			      <value>7</value>
 		    </instruction>
+            <instruction>
+			      <name>GET_POS</name>
+			      <value>8</value>
+		    </instruction>
 		    <instruction>
 			      <name>SET_X</name>
-			      <value>18</value>
+			      <value>128</value>
 		    </instruction>
 		    <instruction>
 			      <name>SET_Y</name>
-			      <value>20</value>
+			      <value>129</value>
 		    </instruction>
 		    <instruction>
-			      <name>SET_H</name>
-			      <value>22</value>
+			      <name>SET_A</name>
+			      <value>130</value>
 		    </instruction>
 		    <instruction>
 			      <name>SET_M_L</name>
-			      <value>24</value>
+			      <value>131</value>
 		    </instruction>
 		    <instruction>
 			      <name>SET_M_R</name>
-			      <value>26</value>
+			      <value>132</value>
 		    </instruction>
             <instruction>
 			      <name>GO_F</name>
-			      <value>28</value>
-		    </instruction>
-		    <instruction>
-			      <name>G_GO</name>
-			      <value>224</value>
-		    </instruction>
-		    <instruction>
-			      <name>G_RESET</name>
-			      <value>225</value>
-		    </instruction>
-		    <instruction>
-			      <name>G_CONF</name>
-			      <value>226</value>
-		    </instruction>
-		    <instruction>
-			      <name>G_STOP</name>
-			      <value>227</value>
+			      <value>133</value>
 		    </instruction>
             <instruction>
+			      <name>SET_POS</name>
+			      <value>134</value>
+		    </instruction>
+            <instruction>
+                <name>G_GO</name>
+                <value>0</value>
+            </instruction>
+            <instruction>
 			      <name>G_GET_X</name>
-			      <value>228</value>
+			      <value>1</value>
 		    </instruction>
             <instruction>
 			      <name>G_GET_Y</name>
-			      <value>229</value>
+			      <value>2</value>
 		    </instruction>
             <instruction>
 			      <name>G_GET_A</name>
-			      <value>230</value>
+			      <value>3</value>
+		    </instruction>
+            <instruction>
+			      <name>G_RESET</name>
+			      <value>4</value>
+		    </instruction>
+		    <instruction>
+			      <name>G_CONF</name>
+			      <value>5</value>
+		    </instruction>
+		    <instruction>
+			      <name>G_STOP</name>
+			      <value>7</value>
+		    </instruction>
+            <instruction>
+			      <name>G_GET_POS</name>
+			      <value>8</value>
 		    </instruction>
             <instruction>
 			      <name>G_GO_F</name>
-			      <value>240</value>
+			      <value>128</value>
 		    </instruction>
 	  </instructionSet>
 </config>
