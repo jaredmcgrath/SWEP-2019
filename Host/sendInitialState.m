@@ -19,11 +19,6 @@ function sendInitialState(config, positions, tags, theta)
 %   N/A
 
 %% Main Code
-numBots = length(tags);
-
-for i = 1:numBots
-    sendInstruction(config, 'SET_X', tags(i), positions(i,1));
-    sendInstruction(config, 'SET_Y', tags(i), positions(i,2));
-    sendInstruction(config, 'SET_H', tags(i), theta(i));
+for i = 1:length(tags)
+    sendInstruction(config, 'SET_POS', tags(i), [positions(i,:) theta(i)]);
 end
-sendInstruction(config, 'G_CONF', numBots);

@@ -9,7 +9,7 @@
     <chassisRadius>0.0630</chassisRadius>
     <wheelRadius>0.0315</wheelRadius>
     
-    <maxError>0.05</maxError>
+    <maxError>0.1</maxError>
 	
 	  <botTags>
 		    <bot>
@@ -17,12 +17,12 @@
 			      <address>0</address>
 			      <name>Shannon</name>
 			      <leftWheel>
-				        <slope>12.8322</slope>
-				        <intercept>95</intercept>
+				        <slope>10</slope>
+				        <intercept>115</intercept>
 			      </leftWheel>
 			      <rightWheel>
-				        <slope>Inf</slope>
-				        <intercept>150</intercept>
+				        <slope>11</slope>
+				        <intercept>115</intercept>
 			      </rightWheel>
 		    </bot>
 		    <bot>

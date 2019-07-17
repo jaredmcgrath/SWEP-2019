@@ -1,16 +1,15 @@
 /////////////////////////////// Set up the libraries ///////////////////////////////////////////////
-// IMPORTANT: "#define NO_PORTD_PINCHANGES" must be before "#include <SoftSerialFix.h>"
-#define NO_PORTD_PINCHANGES // to indicate that port d will not be used for pin change interrupts
-#include <PinChangeInt.h> //Needed with the above line to have more interrupts that dont interfere with the Xbee --- WAS PinChangeInt.h before, I couldn't find that library, but found PinChangeInterrupt instead
-#include <SoftSerialFix.h> //Communication: Needed to create a software serial port for the Xbee
 #include "Wire.h"
 #include "math.h"
 #include <I2Cdev.h> //Sensing/Communication: Needed to have communication to the sensor module
 #include <Adafruit_Sensor.h> //Sensing: Needed to get the sensor data from the accel, gyro, compass and temp unit
 #include <Adafruit_LSM9DS0.h> //Sensing: Needed to process the specific sensor's (LSM9DS0) raw data into units
+#include <XBee.h>
+#include <SoftwareSerial.h>
 
 /////////////////////////////// Program Execution Options ///////////////////////////////////////////////
-#define DEBUG 1
+#define DEBUG 0
+#define DEST_ADDRESS 0xBEEF
 
 /////////////////////////////// Define all needed pins ///////////////////////////////////////////////
 #define MOTOR_R 0 // right motor (A)
@@ -22,6 +21,33 @@
 #define PWMA 9  // PWM control (speed) for motor A
 #define PWMB 10 // PWM control (speed) for motor B
 #define BATTERY_PIN A1   // battery level indicator pin. Would be hooked up to votlage divider from 9v barrel jack, but currently not implemented
+
+/*
+ * Data structures used for encoding/decoding information
+ */
+typedef union {
+  float f;
+  unsigned long uLong;
+  long l;
+  uint8_t b[4];
+} ByteArray4;
+
+typedef union {
+  int16_t int16;
+  uint8_t b[2];
+} ByteArray2;
+
+typedef struct {
+  float x;
+  float y;
+  float a;
+  unsigned long t;
+} PosStruct;
+
+typedef union {
+  PosStruct posStruct;
+  uint8_t b[16];
+} ByteArray16;
 
 /////////////////////////////// Sensor Variables ///////////////////////////////////////////////
 sensor_t accelSetup, magSetup, gyroSetup, tempSetup; //Variables used to setup the sensor module
@@ -42,15 +68,13 @@ float xPosition = 0, yPosition = 0; // Stores the robot's current x and y positi
 float theta = 0; // Stores the current angle of the robot, from the gyro
 
 /////////////////////////////// Other Variables /////////////////////////////////////////////////
-int leftInput, rightInput; //A variable to convert the wheel speeds from char (accepted), to int
+int leftInput = 0, rightInput = 0; //A variable to convert the wheel speeds from char (accepted), to int
 
 // Interruptible movement variables
 // If Arduino is moving for a fixed duration
 bool isMovingFixed = false;
 // Clock value to stop movement at
 unsigned long endTime;
-
-
 
 /////////////////////////////// Agent Tag Data - CHANGE FOR EACH ROBOT ///////////////////////////////////////////////
 /*
@@ -63,6 +87,14 @@ byte id = ID;
 
 ////////////////////////////////////////////////////////// Object Declarations //////////////////////////////////////////////////////////
 Adafruit_LSM9DS0 lsm = Adafruit_LSM9DS0(); //An object for the sensor module, to be accessed to get the data
+SoftwareSerial xbeeSerial(4,5);
+XBee xbee = XBee();
+// Tx/Rx Objects. Decalred once and reused to conserve space
+Tx16Request tx = Tx16Request(DEST_ADDRESS, NULL, 0);
+TxStatusResponse txStatus = TxStatusResponse();
+// Generic response, before cast to specific response type
+XBeeResponse response = XBeeResponse();
+Rx16Response rx16 = Rx16Response();
 
 //////////////////////////////// Setup ////////////////////////////////////////////////////////////
 
@@ -70,9 +102,17 @@ void setup(){
   #if DEBUG
   Serial.begin(9600);
   #endif
+
+  // Assuming we have the Xbee on serial port 3
+  xbeeSerial.begin(9600);
+
+  // Initialize the XBee with a reference to the broadcast output serial 
+  // The default Serial (as opposed to Serial1, etc. on Mega board) stream object, which uses rx pin 0 and tx pin 1
+  // This is baked into the Arduino firmware. A virtual Serial could be created using the SoftwareSerial library
+  // However, this would require the XBee Arduino header to be rewired to whatever output pins are needed
+  xbee.setSerial(xbeeSerial);
   
   botSetup(); // Set's up Bot configuration
-  botCheck(); // Check's that setup was successful and bot is ready to function
   
   #if DEBUG
   Serial.println(F("\n\nRobot setup complete, beginning main loop\n\n"));
@@ -118,26 +158,6 @@ void botSetup(){
   
   #if DEBUG
   Serial.println(F("botSetup completed"));
-  #endif
-}
-
-//botCheck enters this check after it has completed all of its setup, it waits here until MATLAB checks that its ready
-void botCheck(){
-  #if DEBUG
-  Serial.println(F("botCheck started"));
-  #endif
-
-  // Continue checking for instructions while the heading hasn't been set yet
-  // (the heading should be the last variable initialized)
-  while(!isThetaSet){
-    delay(20);
-    checkForIns();
-  }
-  
-  #if DEBUG
-  Serial.print(F("Inital X ")); Serial.println(xPosition); 
-  Serial.print(F("Initial Y ")); Serial.println(yPosition); 
-  Serial.println(F("botCheck completed"));
   #endif
 }
 

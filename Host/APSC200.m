@@ -110,7 +110,7 @@ addpath('XBee');
 
 %% XBEE SETUP
 % Set up the Xbee connection
-config.xbee = serial('/dev/tty.usbserial-DN03ZXNC','Terminator','', 'Timeout', 1);
+config.xbee = serial('/dev/tty.usbserial-DN01F2NX','Terminator','', 'Timeout', 1);
 
 % END XBEE SETUP
 
