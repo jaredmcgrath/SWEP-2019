@@ -74,6 +74,9 @@ configFileName = 'config.xml';
 config = parseConfig(configFileName);
 % Filename of the .mat containing the path
 pathFileName = 'agentData.mat';
+
+% Add XBee class definition folder to path
+addpath('XBee');
 % END RUNTIME PARAMETERS
 
 %% OLD LOCALIZATION SETUP 
@@ -107,7 +110,7 @@ pathFileName = 'agentData.mat';
 
 %% XBEE SETUP
 % Set up the Xbee connection
-config.xbee = serial('/dev/tty.usbserial-DN01F2NX','Terminator','CR', 'Timeout', 1);
+config.xbee = serial('/dev/tty.usbserial-DN03ZXNC','Terminator','', 'Timeout', 1);
 
 % END XBEE SETUP
 
