@@ -117,9 +117,9 @@ config.xbee = serial('/dev/tty.usbserial-DN03ZXNC','Terminator','', 'Timeout', 1
 %% BOT SETUP
 % Call the initializeBotState to get list of bots being worked with, and
 % their states
-[position, tags, xHeading] = initializeBotState(config);
+[position, tags, theta] = initializeBotState(config);
 % Send initial positions to bots
-sendInitialState(config, position, tags, xHeading);
+sendInitialState(config, position, tags, theta);
 disp('Bots setup successfully')
 
 % END BOT SETUP

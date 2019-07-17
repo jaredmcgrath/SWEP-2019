@@ -1,8 +1,8 @@
 void checkForIns() {
   byte data;
   byte insId;
-  if (XBee.available()) {
-    data = XBee.read();
+  if (xBee.available()) {
+    data = xBee.read();
     insId = getInsId(data);
     #if DEBUG
     Serial.print("Instruction received: "); Serial.println(data, HEX);
@@ -18,10 +18,10 @@ void checkForIns() {
       // Send whole instruction
       executeIns(data);
     }
-    // If the instruction is 2 bytes, cycle the XBee until second byte is read and discarded
+    // If the instruction is 2 bytes, cycle the xBee until second byte is read and discarded
     else if (data & 0x10) {
-      while(!XBee.available());
-      XBee.read();
+      while(!xBee.available());
+      xBee.read();
     }
   }
 }
@@ -86,6 +86,9 @@ void executeIns(byte ins) {
       confirm();
       dontGo();
       break;
+    case 0x08:
+      getPos();
+      break;
     case 0x12:
       setX(msb);
       confirm();
@@ -95,7 +98,7 @@ void executeIns(byte ins) {
       confirm();
       break;
     case 0x16:
-      setHeading(msb);
+      setA(msb);
       confirm();
       break;
     case 0x18:
@@ -164,14 +167,14 @@ void badResponse() {
   #if DEBUG
     Serial.print("Bad response, sending "); Serial.println(id<<5);
   #endif
-  XBee.write(id<<5);
+  xBee.write(id<<5);
 }
 
 void confirm() {
   #if DEBUG
     Serial.print("Confirm response, sending "); Serial.println((id<<5) | 0x1F);
   #endif
-  XBee.write((id<<5) | 0x1F);
+  xBee.write((id<<5) | 0x1F);
 }
 
 void reset() {
@@ -194,7 +197,7 @@ void getX() {
   #endif
   message[0] = (id<<5) | ((x>>8) & 0x1F);
   message[1] = x & 0xFF;
-  XBee.write((char*)message, 2);
+  xBee.write((char*)message, 2);
 }
 
 void getY() {
@@ -208,7 +211,7 @@ void getY() {
   }
   message[0] = (id<<5) | (y>>8 & 0x1F);
   message[1] = y & 0xFF;
-  XBee.write((char*)message, 2);
+  xBee.write((char*)message, 2);
 }
 
 void getAngle() {
@@ -221,7 +224,7 @@ void getAngle() {
   // This number should always be unsigned integer < 360, so only need 9 bits
   message[0] = (id<<5) | (t>>8 & 0x01);
   message[1] = t & 0xFF;
-  XBee.write((char*)message, 2);
+  xBee.write((char*)message, 2);
 }
 
 void getLeftTicks() {
@@ -229,7 +232,7 @@ void getLeftTicks() {
   lastLeftTicks = leftEncoder;
   message[0] = (id<<5) | (ticks>>8 & 0x1F);
   message[1] = ticks & 0xFF;
-  XBee.write((char*)message, 2);
+  xBee.write((char*)message, 2);
 }
 
 void getRightTicks() {
@@ -237,22 +240,37 @@ void getRightTicks() {
   lastRightTicks = rightEncoder;
   message[0] = (id<<5) | (ticks>>8 & 0x1F);
   message[1] = ticks & 0xFF;
-  XBee.write((char*)message, 2);
+  xBee.write((char*)message, 2);
 }
 
 void getBattery() {
   uint16_t b = analogRead(BATTERY_PIN);
   message[0] = (id<<5) | (b>>7 & 0x1F);
   message[1] = b & 0xFF;
-  XBee.write((char*)message, 2);
+  xBee.write((char*)message, 2);
+}
+
+void getPos() {
+  bytePos positionStamp;
+  positionStamp.pos.id = id;
+  // Disable interrupts to ensure accuracy
+  noInterrupts();
+  positionStamp.pos.x = xPosition;
+  positionStamp.pos.y = yPosition;
+  positionStamp.pos.theta = theta;
+  positionStamp.pos.timeStamp = millis();
+  // Enable interrupts
+  interrupts();
+  Serial.println(positionStamp.pos.x); Serial.println(positionStamp.pos.y); Serial.println(positionStamp.pos.theta); Serial.println(positionStamp.pos.timeStamp); 
+  xBee.write((char*)positionStamp.bytes, 17);
 }
 
 /*
- * All SET instructions will need to read the second data byte from XBee
+ * All SET instructions will need to read the second data byte from xBee
  */
 byte getNextByte() {
-  while(!XBee.available());
-  byte nextByte = XBee.read();
+  while(!xBee.available());
+  byte nextByte = xBee.read();
   #if DEBUG
   Serial.println("Second byte received:");
   Serial.println(nextByte);
@@ -270,15 +288,15 @@ void setY(byte msb) {
   yPosition = y/100.0;
 }
 
-void setHeading(byte msb) {
-  uint16_t h = msb<<8 | getNextByte();
-  baseline = h>180 ? (h-360)*PI/180 : h*PI/180;
+void setA(byte msb) {
+  uint16_t t = msb<<8 | getNextByte();
+  theta = t*PI/180;
   #if DEBUG
-  Serial.println("Heading set");
-  Serial.println(baseline);
+  Serial.println("Theta set");
+  Serial.println(theta);
   #endif
   // IMPORTANT: Setting isHeadingSet true allows botCheck to complete
-  isHeadingSet = true;
+  isThetaSet = true;
 }
 
 void setLeftMotor(byte msb) {
@@ -300,4 +318,3 @@ void goFixed(byte msb) {
   // Set to true to indicate it needs to be stopped in future
   isMovingFixed = true;
 }
-
