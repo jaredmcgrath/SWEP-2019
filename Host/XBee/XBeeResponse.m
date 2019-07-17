@@ -34,7 +34,7 @@ classdef XBeeResponse
         function rx16Response = Rx16Response(obj)
             if obj.apiId == XBeeConst.RX_16_RESPONSE
                 rx16Response = Rx16Response();
-                rx16Response = copy(obj, rx16Response);
+                rx16Response = XBeeResponse.copy(obj, rx16Response);
             else
                 warning("Cast to Rx16Response failed");
             end
@@ -44,7 +44,7 @@ classdef XBeeResponse
         function rx64Response = Rx64Response(obj)
             if obj.apiId == XBeeConst.RX_16_RESPONSE
                 rx64Response = Rx64Response();
-                rx64Response = copy(obj, rx64Response);
+                rx64Response = XBeeResponse.copy(obj, rx64Response);
             else
                 warning("Cast to Rx64Response failed");
             end
@@ -54,21 +54,34 @@ classdef XBeeResponse
         function txStatusResponse = TxStatusResponse(obj)
             if obj.apiId == XBeeConst.TX_STATUS_RESPONSE
                 txStatusResponse = TxStatusResponse();
-                txStatusResponse = copy(obj, txStatusResponse);
+                txStatusResponse = XBeeResponse.copy(obj, txStatusResponse);
             else
                 warning("Cast to TxStatusResponse failed");
             end
         end
+        
+        % Cast to RobotResponse
+        function robotResponse = RobotResponse(obj)
+            if obj.apiId == XBeeConst.RX_16_RESPONSE
+                robotResponse = RobotResponse();
+                robotResponse = XBeeResponse.copy(obj, robotResponse);
+            else
+                warning("Cast to RobotResponse failed");
+            end
+        end
+    end
+    
+    methods (Static)
+        % Static helper method to perform a deep copy when casting
+        function target = copy(source, target)
+        target.msbLength = source.msbLength;
+        target.lsbLength = source.lsbLength;
+        target.apiId = source.apiId;
+        target.checksum = source.checksum;
+        target.frameData = source.frameData;
+        target.isValid = source.isValid;
+        end
     end
 end
 
-% Private helper method to perform a deep copy when casting
-function target = copy(source, target)
-    target.msbLength = source.msbLength;
-    target.lsbLength = source.lsbLength;
-    target.apiId = source.apiId;
-    target.checksum = source.checksum;
-    target.frameData = source.frameData;
-    target.isValid = source.isValid;
-end
 

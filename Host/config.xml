@@ -14,7 +14,7 @@
 	  <botTags>
 		    <bot>
 			      <tag>S</tag>
-			      <value>0</value>
+			      <address>0</address>
 			      <name>Shannon</name>
 			      <leftWheel>
 				        <slope>6.9164</slope>
@@ -27,7 +27,7 @@
 		    </bot>
 		    <bot>
 			      <tag>E</tag>
-			      <value>1</value>
+			      <address>1</address>
 			      <name>Euler</name>
 			      <leftWheel>
 				        <slope>6.5068</slope>
@@ -40,7 +40,7 @@
 		    </bot>
 		    <bot>
 			      <tag>L</tag>
-			      <value>2</value>
+			      <address>2</address>
 			      <name>Laplace</name>
 			      <leftWheel>
 				        <slope>7.711</slope>
@@ -173,14 +173,6 @@
 			      <name>G_GET_A</name>
 			      <value>3</value>
 		    </instruction>
-            <instruction>
-			      <name>G_RESET</name>
-			      <value>4</value>
-		    </instruction>
-		    <instruction>
-			      <name>G_CONF</name>
-			      <value>5</value>
-		    </instruction>
 		    <instruction>
 			      <name>G_STOP</name>
 			      <value>7</value>
@@ -191,7 +183,7 @@
 		    </instruction>
             <instruction>
 			      <name>G_GO_F</name>
-			      <value>128</value>
+			      <value>133</value>
 		    </instruction>
 	  </instructionSet>
 </config>

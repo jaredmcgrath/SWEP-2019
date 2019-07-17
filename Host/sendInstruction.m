@@ -1,9 +1,7 @@
 function [response, nextFrameId] = sendInstruction(config, instruction,...
     tag, data, nextFrameId)
 %% sendInstruction
-% Translates a text instruction to proper format specified in communication
-% protocol. Transmits that command and waits for a response, if applicable.
-% To understand instruction/data formats, consult the spreadsheet.
+% Sends an instruction
 %
 % Parameters:
 %   config
@@ -27,59 +25,69 @@ function [response, nextFrameId] = sendInstruction(config, instruction,...
 %     be non-empty
 
 %% Generate request payload
-% If its a global command, set id = 255 (all bots)
+% Global commands only vary in the destination address. The bots will
+% interpret the commands the same way
 if contains(instruction,'G_')
-    id = 255;
+    address = XBeeConst.BROADCAST_ADDRESS;
+    isGlobal = true;
 else
-    id = config.tagIdStruct.(tag);
+    address = config.tagAddressStruct.(tag);
+    isGlobal = false;
 end
 
-% Generate ID and instruction of message
-msg(1:2) = uint8([id config.insStruct.(instruction)]);
+% Generate instruction hex for message
+msg = uint8(config.insStruct.(instruction));
 % Generate instruction-specific fields
 switch instruction
     % Sending float32 data
     case {'SET_X','SET_Y','SET_A'}
-        msg(3:6) = typecast(single(data),'uint8');
-    % Sending uint8 data
+        msg(2:5) = typecast(single(data),'uint8');
+    % Sending int16 data
     case {'SET_M_L','SET_M_R'}
-        msg(3) = uint8(data);
+        if data > 255
+            data = 255;
+        elseif data < -255
+            data = -255;
+        end
+        msg(2:3) = typecast(int16(data),'uint8');
     % Sending unsigned long (uint32) data
     case {'GO_F','G_GO_F'}
-        msg(3:6) = typecast(uint32(data),'uint8');
+        msg(2:5) = typecast(uint32(data),'uint8');
     % Sending 3 float32 data
     case 'SET_POS'
-        msg(3:14) = typecast(single(data),'uint8');
+        msg(2:13) = typecast(single(data),'uint8');
 end
 
 %% Send and validate response
 
-% Generate the XBeeRequest (FFFF = broadcast address)
-request = Tx16Request(hex2dec('FFFF'),msg,nextFrameId);
+% Generate the XBeeRequest
+request = Tx16Request(address,msg,1);
 valid = false;
 
 while ~valid
-    response = sendAndParse(config, request);
+    xbeeResponses = sendAndParse(config, request);
     valid = true;
     txResponses = TxStatusResponse.empty;
-    rxResponses = Rx16Response.empty;
+    rResponses = RobotResponse.empty;
     % Need to parse through responses, and ensure all TxStatusResponses are
     % successful. Otherwise, resend the request
-    for i = 1:length(response)
-        switch response(i).apiId
-            case XBeeConst.TxStatusResponse
-                txResponses(end+1) = response(i).TxStatusResponse();
+    for i = 1:length(xbeeResponses)
+        switch xbeeResponses(i).apiId
+            case XBeeConst.TX_STATUS_RESPONSE
+                txResponses(end+1) = xbeeResponses(i).TxStatusResponse();
                 % If any TxStatusResponses are invalid or unsuccessful,
                 % break and resend the request
                 if ~txResponses(end).isValid || ~txResponses(end).isSuccess
                     valid = false;
                     break
                 end
-            case XBeeConst.Rx16Response
-                rxResponses(end+1) = response(i).Rx16Response();
-                % If any RxResponses are invalid, break and resend the
+            % Although we're casting to RobotResponse, the API id is still
+            % RX16Response
+            case XBeeConst.RX_16_RESPONSE
+                rResponses(end+1) = xbeeResponses(i).RobotResponse();
+                % If any RobotResponses are invalid, break and resend the
                 % request
-                if ~rxResponses(end).isValid
+                if ~rResponses(end).isValid
                     valid = false;
                     break
                 end
@@ -91,30 +99,62 @@ end
 
 %% Parse response data
 % If we received response(s)
-% TODO: All of this parsing stuff
-if ~isempty(rxResponses)
-    switch instruction
-        case {'GET_X','GET_Y','GET_A'}
-            rslt = fread(config.xbee,'uint8');
-            response = typecast(rslt(10:13),'single');
-        case {'GET_M_L','GET_M_R'}
-            rslt = fread(config.xbee,'uint8');
-            response = typecast(rslt(10:13),'int32');
-        case 'GET_POS'
-            rslt = fread(config.xbee,'uint8');
-            response(1) = typecast(rslt(10:13),'single');
-            response(2) = typecast(rslt(14:17),'single');
-            response(3) = typecast(rslt(18:21),'single');
-            response(4) = typecast(rslt(22:25),'uint32');
-%         case {'G_GET_X','G_GET_Y','G_GET_A'}
-%             rslt = fread(config.xbee,'uint8');
-%             
+if ~isempty(rResponses)
+    % For all global responses, need to establish the sort order based on
+    % the order of the tag argument. Then, decode responses and sort them
+    if isGlobal
+        % This constructs the order in which we want the response
+        idOrder = arrayfun(@(t) config.tagAddressStruct.(tag(t)), 1:length(tag));
+        % Get the actual address order
+        receivedOrder = arrayfun(@(x) x.id, rResponses)';
+        switch instruction
+            case {'G_GET_X','G_GET_Y','G_GET_A'}
+                unsorted = arrayfun(@(x) typecast(x.responseData,'single'),rResponses)';
+            case {'G_GET_T_L','G_GET_T_R'}
+                unsorted = arrayfun(@(x) typecast(x.responseData,'int16'),rResponses)';
+            case {'G_GET_POS'}
+                % Do all the casts at once cuz why not
+                unsorted = arrayfun(@(x) [typecast(x.responseData(1:12),'single')...
+                    single(typecast(x.responseData(13:16),'uint32'))],...
+                    rResponses,'UniformOutput',false);
+                % Output of the above line is cell array, so convert to
+                % matrix
+                unsorted = cell2mat(unsorted');
+            otherwise
+                warning(['Instruction not yet implemented: ' instruction]);
+        end
+        % Merge the address order with data
+        unsorted = [single(receivedOrder) unsorted];
+        % Reorder the responses
+        [~, Ai] = sort(idOrder);
+        [~, Bi] = sort(unsorted(:, 1));
+        ABi(Ai) = Bi;
+        % Get the final response using the sorted index
+        response = unsorted(ABi,:);
+        % Remove the ID column
+        response = response(:,2:end);
+    else
+        switch instruction
+            % For non-global instructions, rResponses should only have one
+            % element. Should check to ensure there is only one...
+            case {'GET_X','GET_Y','GET_A'}
+                response = typecast(rResponses.responseData,'single');
+            case {'GET_T_L','GET_T_R'}
+                response = typecast(rResponses.responseData,'int16');
+            case 'GET_POS'
+                response(1) = typecast(rResponses.responseData(1:4),'single');
+                response(2) = typecast(rResponses.responseData(5:8),'single');
+                response(3) = typecast(rResponses.responseData(9:12),'single');
+                response(4) = typecast(rResponses.responseData(13:16),'uint32');
+            % This is in case we don't know how to interpret the data for
+            % some reason
+            otherwise
+                warning(['Instruction not yet implemented: ' instruction]);
+        end
     end
 end
 
-fclose(config.xbee);
-
-% Old code
+%% Old code
 % switch instruction
 %     case {'GO','STOP'}
 %         while true

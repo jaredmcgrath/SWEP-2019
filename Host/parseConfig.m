@@ -65,17 +65,17 @@ rWheel = str2double(rWheelNode.getTextContent());
 % Get bot tags/ids
 tagNodes = configDOM.getElementsByTagName('bot');
 validTags = char();
-tagIdStruct = struct();
+tagAddressStruct = struct();
 for i = 0:tagNodes.getLength-1
     bot = tagNodes.item(i);
     tag = bot.getElementsByTagName('tag');
     tag = tag.item(0);
     tag = char(tag.getTextContent());
     validTags = [validTags tag];
-    id = bot.getElementsByTagName('value');
+    id = bot.getElementsByTagName('address');
     id = id.item(0);
-    id = int8(str2double(id.getTextContent()));
-    tagIdStruct.(tag) = id;
+    id = uint8(str2double(id.getTextContent()));
+    tagAddressStruct.(tag) = id;
 end
 
 % Get instructions
@@ -128,5 +128,5 @@ end
 
 % Put all values into a struct
 config = struct('maxX',maxX,'maxY',maxY,'maxError',maxError,'validTags',...
-    validTags,'tagIdStruct',tagIdStruct,'insStruct',insStruct,'slope',...
+    validTags,'tagAddressStruct',tagAddressStruct,'insStruct',insStruct,'slope',...
     slope,'intercept',intercept,'rChassis',rChassis,'rWheel',rWheel);

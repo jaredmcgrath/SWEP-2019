@@ -32,11 +32,11 @@ classdef (Abstract) XBeeRequest
     
     methods
         function msbLength = get.msbLength(obj)
-            msbLength = uint8(length(obj.frameData)*pow2(-8));
+            msbLength = uint8((length(obj.frameData)+2)*pow2(-8));
         end
         
         function lsbLength = get.lsbLength(obj)
-            lsbLength = uint8(bitand(length(obj.frameData),255));
+            lsbLength = uint8(bitand((length(obj.frameData)+2),255));
         end
         
         function checksum = get.checksum(obj)
