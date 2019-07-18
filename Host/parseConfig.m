@@ -35,6 +35,8 @@ function config = parseConfig(path)
 %      intercept
 %       n-by-2 matrix of intercepts in [left right; left right; ... ] format,
 %       where n is length of allTags
+%      beacons
+%       Extra beacons for RSSI pings
 
 configDOM = xmlread(path);
 % Get maxX

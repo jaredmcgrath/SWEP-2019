@@ -67,6 +67,10 @@ float deltaTheta; // change in theta for each iteration of robot motion
 float xPosition = 0, yPosition = 0; // Stores the robot's current x and y position estimate from the encoders
 float theta = 0; // Stores the current angle of the robot, from the gyro
 
+//// Localization (with XBees) /////
+uint8_t *rssiValues;
+uint8_t numBeacons = 0, beacon = 0;
+
 /////////////////////////////// Other Variables /////////////////////////////////////////////////
 int leftInput = 0, rightInput = 0; //A variable to convert the wheel speeds from char (accepted), to int
 

@@ -74,9 +74,9 @@ void handleRx16() {
   data++;
   // Decrement dataLength by 1
   dataLength--;
-  rx16.reset();
   // Execute the instruction
   executeInstruction(instruction, data, dataLength);
+  rx16.reset();
 }
 
 void handleStatusResponse() {
@@ -133,6 +133,13 @@ void executeInstruction(uint8_t instruction, uint8_t *data, uint8_t dataLength) 
       break;
     case 0x08:
       getPos();
+      break;
+    case 0x09:
+      // We expect only one uint8 to be sent as data, indicating how many beacons will ping
+      startRssi(*data);
+      break;
+    case 0x0A:
+      nextBeacon();
       break;
     // SET instructions
     case 0x80:
@@ -420,4 +427,37 @@ void setPos(float x, float y, float angle) {
   Serial.print(F("Y Position set to: ")); Serial.println(yPosition);
   Serial.print(F("Theta set to: ")); Serial.println(theta);
   #endif
+}
+
+/*
+ * startRssi() initializes a new array of the required size
+ */
+void startRssi(uint8_t n) {
+  // Set the number of beacons
+  numBeacons = n;
+  // Allocate array
+  uint8_t vals[n];
+  // Assign pointer for reference
+  rssiValues = vals;
+  // Set the initial value
+  vals[0] = rx16.getRssi();
+  // Reset/increment beacon
+  beacon = 1;
+}
+
+void nextBeacon() {
+  // Store next RSSI value
+  rssiValues[beacon++] = rx16.getRssi();
+  // Check if we've received all the pings
+  if (beacon >= numBeacons) {
+    // Allocate payload
+    uint8_t payload[numBeacons+1];
+    // First byte is instruction
+    payload[0] = 0x09;
+    // Copy the RSSI values
+    for (int i = 0; i < numBeacons; i++)
+      payload[i+1] = rssiValues[i];
+    // Send the response with all the RSSI values
+    sendTx16Request(payload, numBeacons+1);
+  }
 }

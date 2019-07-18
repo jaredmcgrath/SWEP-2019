@@ -1,5 +1,4 @@
-function [response, nextFrameId] = sendInstruction(config, instruction,...
-    tag, data, nextFrameId)
+function response = sendInstruction(config, instruction, tag, data)
 %% sendInstruction
 % Sends an instruction
 %
@@ -65,7 +64,7 @@ request = Tx16Request(address,msg,1);
 valid = false;
 
 while ~valid
-    xbeeResponses = sendAndParse(config, request);
+    xbeeResponses = sendAndParse(config.xbee, request);
     valid = true;
     txResponses = TxStatusResponse.empty;
     rResponses = RobotResponse.empty;

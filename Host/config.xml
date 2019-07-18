@@ -17,12 +17,12 @@
 			      <address>0</address>
 			      <name>Shannon</name>
 			      <leftWheel>
-				        <slope>10</slope>
-				        <intercept>115</intercept>
+				        <slope>9</slope>
+				        <intercept>140</intercept>
 			      </leftWheel>
 			      <rightWheel>
-				        <slope>11</slope>
-				        <intercept>115</intercept>
+				        <slope>13</slope>
+				        <intercept>105</intercept>
 			      </rightWheel>
 		    </bot>
 		    <bot>
@@ -129,6 +129,14 @@
 			      <name>GET_POS</name>
 			      <value>8</value>
 		    </instruction>
+            <instruction>
+			      <name>GET_RSSI</name>
+			      <value>9</value>
+		    </instruction>
+            <instruction>
+			      <name>PING</name>
+			      <value>10</value>
+		    </instruction>
 		    <instruction>
 			      <name>SET_X</name>
 			      <value>128</value>
@@ -180,6 +188,10 @@
             <instruction>
 			      <name>G_GET_POS</name>
 			      <value>8</value>
+		    </instruction>
+            <instruction>
+			      <name>G_GET_RSSI</name>
+			      <value>9</value>
 		    </instruction>
             <instruction>
 			      <name>G_GO_F</name>

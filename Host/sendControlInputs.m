@@ -21,4 +21,4 @@ for i=1:length(tags)
     sendInstruction(config, 'SET_M_R', tags(i), controlInput(i,2));
 end
 % Go for 600ms
-sendInstruction(config, 'G_GO_F', length(tags), 800);
+sendInstruction(config, 'G_GO_F', length(tags), 1000);
