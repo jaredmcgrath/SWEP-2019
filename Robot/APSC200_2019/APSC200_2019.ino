@@ -49,6 +49,15 @@ typedef union {
   uint8_t b[16];
 } ByteArray16;
 
+/////////////////////////////// Gyro Constants & Variables /////////////////////////////////////////////////
+#define GYRO_CORRECTION_SLOPE 0.000414956F // (from excel 0.0000014956F)slope for the correction line for the gyro readings
+#define GYRO_CORRECTION_INTERCEPT 0.243588F // (from excel 0.243588F) intercept for the correction line for the gyro readings
+float gyro_time; // time when gyro measurement taken
+float gyro_time_previous = 909; // stores the time when the previous gyro measurment was taken !!!NEEDS TO BE INCLUDED IN STARTUP SEQUENCE!!!
+float gyro_gain; // stores the gain value returned by the gyro for the z-axis
+float gyro_angle_raw = 0; // stores the accumulated raw angle, in degrees, measured by the gyroscope from program start
+float gyro_angle_corrected; // stores the corrected angle of the robot, in radians, measured by the gyro
+
 /////////////////////////////// Sensor Variables ///////////////////////////////////////////////
 sensor_t accelSetup, magSetup, gyroSetup, tempSetup; //Variables used to setup the sensor module
 sensors_event_t accel, mag, gyro, temp; // Variables to store current sensor event data
