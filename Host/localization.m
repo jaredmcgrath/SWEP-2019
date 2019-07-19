@@ -1,5 +1,5 @@
 function [newPosition] = localization(rssi,xBot,yBot)
-% LOCALIZATION: This function takes in the rssi readings and the position
+% LOCALIZATION This function takes in the rssi readings and the position
 % of the robots based on dead reckoning and returns the new positions of 
 % the robots
 %   This function takes the received RSSI values and converts the values
@@ -8,7 +8,8 @@ function [newPosition] = localization(rssi,xBot,yBot)
 %   position is then fused with that from the deadreckoning to determine
 %   the most probable location of the robot
 
-% Obtains distances from RSSI readings.
+% Obtains distances from RSSI readings. rssi is a m x n matrix where m
+% denotes the number of robots and n denotes the number of beacons
 dist = 0.0854.*rssi.^2+1.8452.*rssi-1.0415;
 
 % Set up grid parameters (PROBABLY CAN BE USER ENTERED OR FROM CONFIG)
