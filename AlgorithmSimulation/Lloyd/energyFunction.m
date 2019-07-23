@@ -1,6 +1,6 @@
-function deltaEnergy = energyFunction(velocity, deltaPosition)
+function deltaEnergy = energyFunction(velocity, deltaPosition, dt)
 %% energyFunction
-% Determines how much energy each agent used when moving.
+% Determines how much energy each agent uses when moving.
 % This can incorporate kinetic energy, friction, etc. to update battery
 % levels
 %
@@ -11,6 +11,8 @@ function deltaEnergy = energyFunction(velocity, deltaPosition)
 %   deltaPosition
 %     n-by-2 vector of the change in position (deltaX, deltaY) of each
 %     agent
+%   dt
+%     Simulated time step
 %
 % Returns:
 %   deltaEnergy
@@ -20,8 +22,6 @@ function deltaEnergy = energyFunction(velocity, deltaPosition)
 %% Constants
 % Physical mass of agents, kg
 m = 0.5;
-% Elapsed time per iteration, s
-unitTime = 30;
 % Unit(s) of space per length-sides, m
 unitSpace = 1;
 %% Example
@@ -29,7 +29,7 @@ unitSpace = 1;
 % E_(i+1) = E_i - (1/2)*m*v^2
 
 % Note that this velocity, v, is supposed to be in m/s
-v = vecnorm(deltaPosition,2,2)*unitSpace/unitTime;
+v = vecnorm(deltaPosition,2,2)*unitSpace/dt;
 
 % Calculate change in energy (always negative, this could change)
 deltaEnergy = (-1/2)*m*(v.^2);
