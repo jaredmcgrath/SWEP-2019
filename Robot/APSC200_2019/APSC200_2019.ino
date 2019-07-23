@@ -8,7 +8,7 @@
 #include <SoftwareSerial.h>
 
 /////////////////////////////// Program Execution Options ///////////////////////////////////////////////
-#define DEBUG 0
+#define DEBUG 1
 #define DEST_ADDRESS 0xBEEF
 
 /////////////////////////////// Define all needed pins ///////////////////////////////////////////////
@@ -50,10 +50,10 @@ typedef union {
 } ByteArray16;
 
 /////////////////////////////// Gyro Constants & Variables /////////////////////////////////////////////////
-#define GYRO_CORRECTION_SLOPE 0.000414956F // (from excel 0.0000014956F)slope for the correction line for the gyro readings
-#define GYRO_CORRECTION_INTERCEPT 0.243588F // (from excel 0.243588F) intercept for the correction line for the gyro readings
+#define GYRO_CORRECTION_SLOPE 0.000728128F // (from excel 0.0000014956F)slope for the correction line for the gyro readings
+#define GYRO_CORRECTION_INTERCEPT 0.132F // (from excel 0.243588F) intercept for the correction line for the gyro readings
 float gyroTime; // time when gyro measurement taken
-float gyroTimePrevious = 909; // stores the time when the previous gyro measurment was taken !!!NEEDS TO BE INCLUDED IN STARTUP SEQUENCE!!!
+float gyroTimePrevious = 800; // stores the time when the previous gyro measurment was taken !!!NEEDS TO BE INCLUDED IN STARTUP SEQUENCE!!!
 float gyroGain; // stores the gain value returned by the gyro for the z-axis
 float gyroAngleRaw = 0; // stores the accumulated raw angle, in degrees, measured by the gyroscope from program start
 float gyroAngleCorrected; // stores the corrected angle of the robot, in radians, measured by the gyro
@@ -81,18 +81,16 @@ uint8_t *rssiValues;
 uint8_t numBeacons = 0, beacon = 0;
 
 ////////////////////////////// PID CONTROL ALGORITHM ////////////////////////////////////////////
-float xTarget, yTarget; // The current target point the robot is trying to reach
-float headingDesired; // heading angle from current position to target position (the set point)
-float headingError, headingErrorPrevious = 0; // differnece between current heading and desired heading 
-float headingErrorCum, headingErrorRate;
-float kP = 10, kI = 0, kD = 0;
-unsigned long currentTime, previousTime = 900;
-float elapsedTime;
-
-float output;
-
-
-
+#define DIVIDER 10                              // reduces output from controller to level that can be used in motor inputs
+float xTarget = 1, yTarget = 1;                 // The current target point the robot is trying to reach
+float headingDesired;                           // heading angle from current position to target position (the set point)
+float headingError, headingErrorPrevious = 0;   // differnece between current heading and desired heading 
+float headingErrorCum, headingErrorRate;        // values cumulative and rate of change for heading error. Used in PID calc
+float kP = 20, kI = 0.1, kD = 0;                // PID gains, Proportional, Integral and Derivative gain
+unsigned long currentTime, previousTime = 900;  // variables used to help calcualte elapsed time
+float elapsedTime;                              // Used to determine the cumulative and rate of change for heading error
+float output;                                   // Result from PID controller
+int leftMotorInput, rightMotorInput;            // Right and Left motor inputs
 
 /////////////////////////////// Other Variables /////////////////////////////////////////////////
 int leftInput = 0, rightInput = 0; //A variable to convert the wheel speeds from char (accepted), to int
@@ -196,8 +194,10 @@ void botLoop(){
   positionCalc();
   // Calculates heading using the gyroscope
   calcGyroAngle();
-  //control process
-  controlProcess();
+  // control process, if statement used as a delay between running function
+  if(millis() - currentTime > 100){
+    controlProcess();
+  }
   // Check for any instructions
   checkForIns();
   // Check if movement should be interrupted
@@ -206,10 +206,12 @@ void botLoop(){
 
 // This function controls the motion of the robot such that it reaches its destination target
 void controlProcess(){
+  // Obtain current time and calcualte the time elapsed from the previous run of the function
   currentTime = millis();
   elapsedTime = (float) currentTime - previousTime;
-  
-  headingDesired = atan2((yTarget-yPosition),(xTarget-xPosition)); 
+
+  // Calcualte how 'off' the robot's heading is
+  headingDesired = atan2((yTarget-yPosition),(xTarget-xPosition));
 
   headingError = headingDesired - gyroAngleCorrected;
   headingErrorCum = headingError * elapsedTime;
@@ -220,7 +222,31 @@ void controlProcess(){
   headingErrorPrevious = headingError;
   previousTime = currentTime;
 
+  leftMotorInput = 175 - output/DIVIDER;
+  rightMotorInput = 175 + output/DIVIDER;
+
+  if (leftMotorInput < 150){
+    leftMotorInput = 150;
+  }
+  if (rightMotorInput < 150){
+    rightMotorInput = 150;
+  }
+  
   // Translating the Control Process output to meaningful motor inputs
-  driveArdumoto(MOTOR_L, 150 - output);
-  driveArdumoto(MOTOR_R, 150 + output);
+  // driveArdumoto(MOTOR_L, leftMotorInput);
+  // driveArdumoto(MOTOR_R, rightMotorInput);
+
+   #if DEBUG
+  Serial.print(currentTime);
+  Serial.print(",");
+  Serial.print(headingDesired);
+  Serial.print(",");
+  Serial.print(gyroAngleCorrected);
+  Serial.print(",");
+  Serial.print(output);
+  Serial.print(",");
+  Serial.print(175+output/DIVIDER);
+  Serial.print(",");
+  Serial.println(175-output/DIVIDER);
+  #endif  
 }
