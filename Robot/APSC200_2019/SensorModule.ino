@@ -138,11 +138,12 @@ void calcGyroAngle()
   // This function calculates the heading of the robot using the gyro sensor on the LSM9DS0 sensor module
   // The first step is to obtain the gain reading from the gyro sensor for the z-axis and record the time 
   // from program start that the reading was taken
+   lsm.getEvent(&accel, &mag, &gyro, &temp);
   gyroGain = gyro.gyro.z;
   gyroTime = float(millis());
 
   // Calculate the raw gyro angle [in degrees] to keep track of the drift the sensor experiences over time
-  gyroAngleRaw = gyroAngleRaw + (gyroTime - gyroTimePrevious)/1000*gyroGain;
+  gyroAngleRaw = gyroAngleRaw + (float)((gyroTime - gyroTimePrevious)/1000)*gyroGain;
   
   // Calcualte the corrected gyro angle [radians] using the previous raw angle measurement (which is in degrees) 
   gyroAngleCorrected = (gyroAngleRaw - (GYRO_CORRECTION_SLOPE * gyroTime - GYRO_CORRECTION_INTERCEPT))*PI/180;
@@ -156,7 +157,14 @@ void calcGyroAngle()
   {
     gyroAngleCorrected = gyroAngleCorrected + 2*PI;
   }
-
   // Stores the time of the current measurement in a variable to be called for in the next iteration of the function
   gyroTimePrevious = gyroTime;
+
+  #if DEBUG
+  Serial.print(gyroTime);
+  Serial.print(",");
+  Serial.print(gyroGain);
+  Serial.print(",");
+  Serial.println(gyroAngleCorrected);
+  #endif
 }
