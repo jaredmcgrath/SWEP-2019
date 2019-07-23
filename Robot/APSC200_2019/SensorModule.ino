@@ -138,7 +138,7 @@ void calcGyroAngle()
   // This function calculates the heading of the robot using the gyro sensor on the LSM9DS0 sensor module
   // The first step is to obtain the gain reading from the gyro sensor for the z-axis and record the time 
   // from program start that the reading was taken
-   lsm.getEvent(&accel, &mag, &gyro, &temp);
+  lsm.getEvent(&accel, &mag, &gyro, &temp);
   gyroGain = gyro.gyro.z;
   gyroTime = float(millis());
 

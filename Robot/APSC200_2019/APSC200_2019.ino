@@ -50,13 +50,13 @@ typedef union {
 } ByteArray16;
 
 /////////////////////////////// Gyro Constants & Variables /////////////////////////////////////////////////
-#define GYRO_CORRECTION_SLOPE 0.000728128F // (from excel 0.0000014956F)slope for the correction line for the gyro readings
-#define GYRO_CORRECTION_INTERCEPT 0.132F // (from excel 0.243588F) intercept for the correction line for the gyro readings
-float gyroTime; // time when gyro measurement taken
-float gyroTimePrevious = 800; // stores the time when the previous gyro measurment was taken !!!NEEDS TO BE INCLUDED IN STARTUP SEQUENCE!!!
-float gyroGain; // stores the gain value returned by the gyro for the z-axis
-float gyroAngleRaw = 0; // stores the accumulated raw angle, in degrees, measured by the gyroscope from program start
-float gyroAngleCorrected; // stores the corrected angle of the robot, in radians, measured by the gyro
+#define GYRO_CORRECTION_SLOPE 0.000728128F  // slope for the correction line for the gyro readings
+#define GYRO_CORRECTION_INTERCEPT 0.132F    // intercept for the correction line for the gyro readings
+float gyroTime;                             // time when gyro measurement taken
+float gyroTimePrevious = 800;     // stores the time when the previous gyro measurment was taken !!!NEEDS TO BE INCLUDED IN STARTUP SEQUENCE!!!
+float gyroGain;                   // stores the gain value returned by the gyro for the z-axis
+float gyroAngleRaw = 0;           // stores the accumulated raw angle, in degrees, measured by the gyroscope from program start
+float gyroAngleCorrected;         // stores the corrected angle of the robot, in radians, measured by the gyro
 
 /////////////////////////////// Sensor Variables ///////////////////////////////////////////////
 sensor_t accelSetup, magSetup, gyroSetup, tempSetup; //Variables used to setup the sensor module
@@ -81,19 +81,19 @@ uint8_t *rssiValues;
 uint8_t numBeacons = 0, beacon = 0;
 
 ////////////////////////////// PID CONTROL ALGORITHM ////////////////////////////////////////////
-#define DIVIDER 10                              // reduces output from controller to level that can be used in motor inputs
+#define DIVIDER 2                               // Reduces output from controller to level that can be used in motor inputs
 float xTarget = 1, yTarget = 1;                 // The current target point the robot is trying to reach
-float headingDesired;                           // heading angle from current position to target position (the set point)
-float headingError, headingErrorPrevious = 0;   // differnece between current heading and desired heading 
-float headingErrorCum, headingErrorRate;        // values cumulative and rate of change for heading error. Used in PID calc
-float kP = 20, kI = 0.1, kD = 0;                // PID gains, Proportional, Integral and Derivative gain
-unsigned long currentTime, previousTime = 900;  // variables used to help calcualte elapsed time
+float headingDesired;                           // Heading angle from current position to target position (the set point)
+float headingError, headingErrorPrevious = 0;   // Differnece between current heading and desired heading 
+float headingErrorCum, headingErrorRate;        // Values cumulative and rate of change for heading error. Used in PID calc
+float kP = 50, kI = 0, kD = 0;                  // PID gains, Proportional, Integral and Derivative gain
+unsigned long currentTime, previousTime = 900;  // Variables used to help calcualte elapsed time
 float elapsedTime;                              // Used to determine the cumulative and rate of change for heading error
 float output;                                   // Result from PID controller
-int leftMotorInput, rightMotorInput;            // Right and Left motor inputs
+int leftMotorInput, rightMotorInput;            // Right and left motor inputs
 
 /////////////////////////////// Other Variables /////////////////////////////////////////////////
-int leftInput = 0, rightInput = 0; //A variable to convert the wheel speeds from char (accepted), to int
+int leftInput = 0, rightInput = 0; // A variable to convert the wheel speeds from char (accepted), to int
 
 // Interruptible movement variables
 // If Arduino is moving for a fixed duration
@@ -213,30 +213,41 @@ void controlProcess(){
   // Calcualte how 'off' the robot's heading is
   headingDesired = atan2((yTarget-yPosition),(xTarget-xPosition));
 
+  // determining error on heading
   headingError = headingDesired - gyroAngleCorrected;
-  headingErrorCum = headingError * elapsedTime;
+  if (headingError < -PI){
+    headingError += 2*PI;
+  }
+  else if (headingError > PI){
+    headingError += 2*PI;
+  }
+  headingErrorCum += headingError * elapsedTime/1000;
   headingErrorRate = (headingError - headingErrorPrevious)/elapsedTime;
 
+  // Control equation
   output = kP*headingError + kI*headingErrorCum + kD*headingErrorRate;
 
+  // Saving data that will be required for the next iteration of control algorithm
   headingErrorPrevious = headingError;
   previousTime = currentTime;
 
-  leftMotorInput = 175 - output/DIVIDER;
-  rightMotorInput = 175 + output/DIVIDER;
+  // Calcualtes the wheel inputs using the control output
+  leftMotorInput = 120 - output/DIVIDER;
+  rightMotorInput = 120 + output/DIVIDER;
 
-  if (leftMotorInput < 150){
-    leftMotorInput = 150;
+  // Ensures wheels still rotate. Maybe not necessary?
+  if (leftMotorInput < 80){
+    leftMotorInput = 80;
   }
-  if (rightMotorInput < 150){
-    rightMotorInput = 150;
+  if (rightMotorInput < 80){
+    rightMotorInput = 80;
   }
   
-  // Translating the Control Process output to meaningful motor inputs
-  // driveArdumoto(MOTOR_L, leftMotorInput);
-  // driveArdumoto(MOTOR_R, rightMotorInput);
+  // Sending the motor inputs to their respective motor
+  driveArdumoto(MOTOR_L, leftMotorInput);
+  driveArdumoto(MOTOR_R, rightMotorInput);
 
-   #if DEBUG
+  #if DEBUG
   Serial.print(currentTime);
   Serial.print(",");
   Serial.print(headingDesired);
@@ -245,8 +256,8 @@ void controlProcess(){
   Serial.print(",");
   Serial.print(output);
   Serial.print(",");
-  Serial.print(175+output/DIVIDER);
+  Serial.print(leftMotorInput);
   Serial.print(",");
-  Serial.println(175-output/DIVIDER);
+  Serial.println(rightMotorInput);
   #endif  
 }
