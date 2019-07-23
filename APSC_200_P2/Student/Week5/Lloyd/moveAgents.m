@@ -1,5 +1,5 @@
 function [agentPositions, distanceTravelled, energy] = moveAgents(agentPositions,...
-    centroids, sides, energy, velocityType, maxVelocity, scaleFactor)
+    centroids, sides, dt, energy, velocityType, maxVelocity, scaleFactor)
 %% moveAgents
 % Moves each agent towards its assigned centroid. Must ensure agents don't
 % move out of bounds.
@@ -9,6 +9,8 @@ function [agentPositions, distanceTravelled, energy] = moveAgents(agentPositions
 %     n-by-2 vector of the x, y positions for n agents before moving
 %   centroids
 %     n-by-2 vector of the x, y centroid locations that agents move towards
+%   dt
+%     Simulated time step
 %   sides
 %     Side length of the arena
 %   energy
@@ -30,4 +32,3 @@ function [agentPositions, distanceTravelled, energy] = moveAgents(agentPositions
 %     n-by-1 vector of distance travelled by each agent this iteration
 %   energy
 %     n-by-1 vector of agent energy after moving
-%% Your Code Below

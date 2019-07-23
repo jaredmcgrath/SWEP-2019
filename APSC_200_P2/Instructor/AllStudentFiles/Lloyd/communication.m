@@ -13,4 +13,3 @@ function [commCells,adjMatrix] = communication(agentPositions,rComm)
 %     Cell array, where each cell is one communication group
 %   adjMatrix
 %     The symmetric adjacency matrix 
-%% Your Code Below

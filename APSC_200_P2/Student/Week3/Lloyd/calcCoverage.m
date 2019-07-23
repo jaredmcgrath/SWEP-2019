@@ -19,10 +19,3 @@ function coverage = calcCoverage(agentPoints, partitions, density,...
 % Returns
 %   coverage
 %     Percent value between 0 and 1 representing coverage
-
-allPointsCell = arrayfun(@(col) vertcat(agentPoints{:, col}),...
-    1:size(agentPoints, 2), 'UniformOutput', false);
-allPoints = unique(allPointsCell{1},'first','rows');
-coveredMass = sum(density( sub2ind(size(density),...
-    partitions*allPoints(:,2), partitions*allPoints(:,1)) ), 'all');
-coverage = coveredMass/totalMass;

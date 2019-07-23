@@ -16,4 +16,3 @@ function density = calcDensity(D,iteration,sides,partitions)
 %   density
 %     (sides*partitions)-by-(sides*partitions) matrix of doubles
 %     representing discretized density for the given iteration
-%% Your Code Below

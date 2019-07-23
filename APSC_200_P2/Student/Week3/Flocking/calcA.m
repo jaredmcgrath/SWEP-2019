@@ -21,3 +21,4 @@ function A = calcA(k, sigma, beta, agentPosition)
 % Returns:
 %   A
 %     The n-by-n adjacnecy matrix
+

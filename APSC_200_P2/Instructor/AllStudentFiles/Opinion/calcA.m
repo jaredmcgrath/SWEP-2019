@@ -14,4 +14,3 @@ function A = calcA(nodeData)
 % Returns: 
 %   A
 %     Adjacency matrix
-%% Your Code Below

@@ -15,4 +15,3 @@ function mass = calcMass(agentPoints,density,partitions)
 %   mass
 %     n-by-1 vector where the ith entry is the mass of agent i's observed
 %     region (x) sum(density(partitions*[x(:,2) x(:,1)]),'all')
-%% Your Code Below
