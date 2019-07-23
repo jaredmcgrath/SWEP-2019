@@ -1,4 +1,4 @@
-function nodeData = updateNodeData(nodeData, L, timeStep, iteration)
+function nodeData = updateNodeData(nodeData, L, dt, time)
 %% updateNodeData
 % Updates nodeData (rComm, position(s), leftNoise and/or rightNoise)
 % for each iteration
@@ -13,13 +13,12 @@ function nodeData = updateNodeData(nodeData, L, timeStep, iteration)
 %     simulations dimension(s), before update
 %   L
 %     Laplacian matrix calculated for this iteration
-%   timeStep
-%     Simulated duration per iteration
-%   iteration
-%     The current iteration
+%   dt
+%     Simulated time step
+%   time
+%     The current time
 %
 % Returns:
 %   nodeData 
 %     Matrix of data for all nodes in format specified above, depending on
 %     simulations dimension(s), after update
-%% Your Code Below

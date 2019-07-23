@@ -20,4 +20,3 @@ function centroids = calcCentroids(agentPoints, mass, density,...
 % Returns:
 %   centroids
 %     n-by-2 vector of the x, y positions of the centroids of each region
-%% Your Code Below

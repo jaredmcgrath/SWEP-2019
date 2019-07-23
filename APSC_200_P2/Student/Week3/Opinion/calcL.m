@@ -9,4 +9,3 @@ function L = calcL(A)
 % Returns:
 %   L
 %     Laplacian Matrix (n x n matrix where n is the number of nodes)
-%% Your Code Below
