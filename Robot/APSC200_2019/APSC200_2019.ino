@@ -8,7 +8,8 @@
 #include <SoftwareSerial.h>
 
 /////////////////////////////// Program Execution Options ///////////////////////////////////////////////
-#define DEBUG 1
+#define DEBUG 0
+#define PRINT_RESULTS 1
 #define DEST_ADDRESS 0xBEEF
 
 /////////////////////////////// Define all needed pins ///////////////////////////////////////////////
@@ -82,15 +83,21 @@ uint8_t numBeacons = 0, beacon = 0;
 
 ////////////////////////////// PID CONTROL ALGORITHM ////////////////////////////////////////////
 #define DIVIDER 2                               // Reduces output from controller to level that can be used in motor inputs
-float xTarget = 1, yTarget = 1;                 // The current target point the robot is trying to reach
+float xTarget[] = {2}, yTarget[] = {2};                 // The current target point the robot is trying to reach
+int counter = 0;
 float headingDesired;                           // Heading angle from current position to target position (the set point)
 float headingError, headingErrorPrevious = 0;   // Differnece between current heading and desired heading 
 float headingErrorCum, headingErrorRate;        // Values cumulative and rate of change for heading error. Used in PID calc
-float kP = 50, kI = 0, kD = 0;                  // PID gains, Proportional, Integral and Derivative gain
+float kP = 100, kI = 0, kD = 0;                  // PID gains, Proportional, Integral and Derivative gain
 unsigned long currentTime, previousTime = 900;  // Variables used to help calcualte elapsed time
 float elapsedTime;                              // Used to determine the cumulative and rate of change for heading error
 float output;                                   // Result from PID controller
 int leftMotorInput, rightMotorInput;            // Right and left motor inputs
+
+///////////////////////////// HIT TARGET ///////////////////////////////////////////////////////
+#define TARGET_THRESHOLD 0.05F 
+float dist = 0;
+
 
 /////////////////////////////// Other Variables /////////////////////////////////////////////////
 int leftInput = 0, rightInput = 0; // A variable to convert the wheel speeds from char (accepted), to int
@@ -124,7 +131,7 @@ Rx16Response rx16 = Rx16Response();
 //////////////////////////////// Setup ////////////////////////////////////////////////////////////
 
 void setup(){
-  #if DEBUG
+  #if DEBUG || PRINT_RESULTS
   Serial.begin(9600);
   #endif
 
@@ -194,10 +201,15 @@ void botLoop(){
   positionCalc();
   // Calculates heading using the gyroscope
   calcGyroAngle();
-  // control process, if statement used as a delay between running function
+  // control process, if statement used as a delay between running control and hit target functions
   if(millis() - currentTime > 100){
     controlProcess();
+    hitTarget();
   }
+  #if PRINT_RESULTS
+  printResults();
+  #endif
+  
   // Check for any instructions
   checkForIns();
   // Check if movement should be interrupted
@@ -206,23 +218,25 @@ void botLoop(){
 
 // This function controls the motion of the robot such that it reaches its destination target
 void controlProcess(){
-  // Obtain current time and calcualte the time elapsed from the previous run of the function
+  // Obtain current time and calculate the time elapsed from the previous run of the function
   currentTime = millis();
   elapsedTime = (float) currentTime - previousTime;
 
-  // Calcualte how 'off' the robot's heading is
-  headingDesired = atan2((yTarget-yPosition),(xTarget-xPosition));
+  // Calculate how 'off' the robot's heading is
+  headingDesired = atan2((yTarget[counter]-yPosition),(xTarget[counter]-xPosition));
 
   // determining error on heading
   headingError = headingDesired - gyroAngleCorrected;
+  
   if (headingError < -PI){
     headingError += 2*PI;
   }
   else if (headingError > PI){
-    headingError += 2*PI;
+    headingError -= 2*PI;
   }
+  
   headingErrorCum += headingError * elapsedTime/1000;
-  headingErrorRate = (headingError - headingErrorPrevious)/elapsedTime;
+  headingErrorRate = (headingError - headingErrorPrevious)/(elapsedTime/1000);
 
   // Control equation
   output = kP*headingError + kI*headingErrorCum + kD*headingErrorRate;
@@ -231,33 +245,52 @@ void controlProcess(){
   headingErrorPrevious = headingError;
   previousTime = currentTime;
 
-  // Calcualtes the wheel inputs using the control output
+  // Calculates the wheel inputs using the control output
   leftMotorInput = 120 - output/DIVIDER;
   rightMotorInput = 120 + output/DIVIDER;
 
-  // Ensures wheels still rotate. Maybe not necessary?
+  // Ensures wheels still rotate and dont slip.
   if (leftMotorInput < 80){
     leftMotorInput = 80;
   }
+  else if (leftMotorInput > 230){
+    leftMotorInput = 230;
+  }
   if (rightMotorInput < 80){
     rightMotorInput = 80;
+  }
+  else if (rightMotorInput > 230){
+    rightMotorInput = 230;
   }
   
   // Sending the motor inputs to their respective motor
   driveArdumoto(MOTOR_L, leftMotorInput);
   driveArdumoto(MOTOR_R, rightMotorInput);
 
-  #if DEBUG
-  Serial.print(currentTime);
+}
+
+void hitTarget(){
+  dist = sqrt(pow((yTarget[counter]-yPosition),2)+pow((xTarget[counter]-xPosition),2));
+  
+  if (dist < TARGET_THRESHOLD){
+    counter ++;
+    // ask for next target coordinates from the Host computer
+    // Need to create XBee transmissio commands to ask for this information
+  }
+}
+
+void printResults(){
+  Serial.print(xPosition);
+  Serial.print(",");
+  Serial.print(yPosition);
+  Serial.print(",");
+  Serial.print(xTarget[counter]);
+  Serial.print(",");
+  Serial.print(yTarget[counter]);
   Serial.print(",");
   Serial.print(headingDesired);
   Serial.print(",");
   Serial.print(gyroAngleCorrected);
   Serial.print(",");
-  Serial.print(output);
-  Serial.print(",");
-  Serial.print(leftMotorInput);
-  Serial.print(",");
-  Serial.println(rightMotorInput);
-  #endif  
+  Serial.println(output);
 }
