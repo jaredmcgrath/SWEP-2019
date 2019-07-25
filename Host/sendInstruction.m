@@ -64,7 +64,7 @@ request = Tx16Request(address,msg,1);
 valid = false;
 
 while ~valid
-    xbeeResponses = sendAndParse(config.xbee, request);
+    xbeeResponses = sendAndParse(config.beacons(1), request);
     valid = true;
     txResponses = TxStatusResponse.empty;
     rResponses = RobotResponse.empty;

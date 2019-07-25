@@ -1,4 +1,4 @@
-function response = sendAndParse(serialPort, request)
+function response = sendAndParse(serialPort, request, isOpen, shouldClose)
 %% sendAndParse
 % Sends the given request on the specified serial port and parses any 
 % response packets into XBeeResponse objects
@@ -8,18 +8,29 @@ function response = sendAndParse(serialPort, request)
 %     A closed serial port instance, connected to an XBee in API = 2 mode
 %   request
 %     An XBeeRequest object to be transmitted
+%   isOpen
+%     Boolean value indicating whether the serialPort is open
+%   shouldClose
+%     Boolean value indicating whether the serialPort should be closed upon
+%     returning
 % 
 % Returns:
 %   response
 %     An array of XBeeResponse objects
 
 % Open XBee
-fopen(serialPort);
+if nargin < 3 || ~isOpen
+    fopen(serialPort);
+end
 % Send packet
 fwrite(serialPort, request.toSendFormat(), 'uint8');
+pause(0.1);
 
 % TODO: Test this section to ensure closing the serial port doesn't mess up
 % the reading in parse()
-fclose(serialPort);
-pause(0.1);
 response = parse(serialPort);
+
+% Close the serial port
+if nargin < 4 || shouldClose
+    fclose(serialPort);
+end

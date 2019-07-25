@@ -109,8 +109,13 @@ addpath('XBee');
 % END OLD LOCALIZATION SETUP
 
 %% XBEE SETUP
+% NOTE:
+% This is the old xbee configuration. To set up the XBee for serial
+% communication, it is configured in config.xml and instantiated in
+% parseConfig(). The main beacon should be config.beacons(1)
+%
 % Set up the Xbee connection
-config.xbee = serial('/dev/tty.usbserial-DN01F2NX','Terminator','', 'Timeout', 1);
+%%config.xbee = serial('/dev/tty.usbserial-DN01F2NX','Terminator','', 'Timeout', 1);
 
 % END XBEE SETUP
 

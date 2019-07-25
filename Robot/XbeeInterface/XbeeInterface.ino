@@ -1,6 +1,6 @@
 #include <XBee.h>
 
-#define DEST_ADDRESS 0x0001
+#define DEST_ADDRESS 0xBEEF
 #define BATTERY_PIN 1
 #define MOTOR_L 2
 #define MOTOR_R 3
@@ -34,8 +34,11 @@ typedef union {
 float xPosition = 0, yPosition = 0, theta = 0;
 int leftInput = 0, rightInput = 0;
 unsigned long endTime;
-bool isMovingFixed = false, isHeadingSet = false;
+bool isMovingFixed = false, isThetaSet = false;
 int lastLeftTicks = 0, lastRightTicks = 0, leftEncoder = 0, rightEncoder = 0;
+
+uint8_t *rssiValues;
+uint8_t numBeacons = 0, beacon = 0;
 
 XBee xbee = XBee();
 

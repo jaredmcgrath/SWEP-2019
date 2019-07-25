@@ -52,39 +52,17 @@
 			      </rightWheel>
 		    </bot>
 	  </botTags>
-	
-	  <beacons>
-		    <beacon>
-			      <irPin>17</irPin>
-			      <usPin>27</usPin>
-			      <x>1.5</x>
-			      <y>0</y>
-		    </beacon>
-		    <beacon>
-			      <irPin>10</irPin>
-			      <usPin>9</usPin>
-			      <x>0.5</x>
-			      <y>0</y>
-		    </beacon>
-		    <beacon>
-			      <irPin>19</irPin>
-			      <usPin>26</usPin>
-			      <x>0</x>
-			      <y>0.5</y>
-		    </beacon>
-		    <beacon>
-			      <irPin>25</irPin>
-			      <usPin>8</usPin>
-			      <x>0</x>
-			      <y>1.5</y>
-		    </beacon>
-		    <beacon>
-			      <irPin>20</irPin>
-			      <usPin>21</usPin>
-			      <x>0</x>
-			      <y>2.5</y>
-		    </beacon>
-	  </beacons>
+
+      <beacon>
+          <port>/dev/tty.usbserial-DN01F2NX</port>
+          <x>0</x>
+          <y>0</y>
+      </beacon>
+      <beacon>
+          <port>/dev/tty.usbserial-DN03ZXNC</port>
+          <x>1</x>
+          <y>0</y>
+      </beacon>
 	
 	  <rpi>
 		    <address>130.15.101.192</address>

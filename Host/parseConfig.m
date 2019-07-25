@@ -128,7 +128,26 @@ for i = 0:rightNodes.getLength-1
     intercept(i+1, 2) = in;
 end
 
+% Beacons
+beaconNodes = configDOM.getElementsByTagName('beacon');
+for i = 0:beaconNodes.getLength-1
+    beacon = beaconNodes.item(i);
+    % The serial port of the beacon
+    port = beacon.getElementsByTagName('port');
+    port = port.item(0);
+    port = string(port.getTextContent());
+    beacons(i+1) = serial(port,'Terminator','', 'Timeout', 1);
+    x = beacon.getElementsByTagName('x');
+    x = x.item(0);
+    x = str2double(x.getTextContent());
+    y = beacon.getElementsByTagName('y');
+    y = y.item(0);
+    y = str2double(y.getTextContent());
+    beaconPositions(i+1,:) = [x y];
+end
+
 % Put all values into a struct
 config = struct('maxX',maxX,'maxY',maxY,'maxError',maxError,'validTags',...
     validTags,'tagAddressStruct',tagAddressStruct,'insStruct',insStruct,'slope',...
-    slope,'intercept',intercept,'rChassis',rChassis,'rWheel',rWheel);
+    slope,'intercept',intercept,'rChassis',rChassis,'rWheel',rWheel,...
+    'beacons',beacons,'beaconPositions',beaconPositions);

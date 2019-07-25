@@ -5,14 +5,11 @@ function response = parse(serialPort)
 %
 % Parameters:
 %   serialPort
-%     The closed serial port representing the XBee that is to be parsed
+%     The OPEN serial port representing the XBee that is to be parsed
 %
 % Returns:
 %   response
 %     Array of XBeeResponse objects
-
-% Open the serial port
-fopen(serialPort);
 
 % Initialize response. Should be an array of XBeeResponse objects
 response = XBeeResponse();
@@ -108,6 +105,3 @@ while serialPort.BytesAvailable > 0
             end
     end
 end
-
-% Close the serial port
-fclose(serialPort);

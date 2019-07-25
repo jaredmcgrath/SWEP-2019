@@ -12,11 +12,6 @@ void checkForIns() {
   if (xbee.getResponse().isAvailable()) {
     xbee.getResponse(response);
     switch (response.getApiId()) {
-      // Case of a 64-bit address response
-      case RX_64_RESPONSE:
-        response.getRx64Response(rx64);
-        handleRx64();
-        break;
       // Case of a 16-bit address response
       case RX_16_RESPONSE:
         response.getRx16Response(rx16);
@@ -33,28 +28,6 @@ void checkForIns() {
     // Handle the error
     handleError(xbee.getResponse().getErrorCode());
   }
-}
-
-/**
- * Callback to handle all Rx64Responses received on the XBee. The response should be located in rx64
- */
-void handleRx64() {
-  #if DEBUG
-  Serial.println(F("Call to handleRx64()"));
-  #endif
-//  // Get the frame data length
-//  uint8_t dataLength = rx64.getFrameDataLength();
-//  // Get reference to frame data
-//  // Frame data includes
-//  uint8_t *data = rx64.getFrameData();
-//  // Get RSSI
-//  uint8_t rssi = rx64.getRssi();
-//  // Update payload to echo received data
-//  for (int i = 0; i < dataLength; i++) 
-//    *(payload + i) = *(data + rx64.getDataOffset() + i);
-//  // Send RSSI as last byte
-//  *(payload + dataLength) = rssi;
-//  xbee.send(tx);
 }
 
 /**
@@ -101,9 +74,9 @@ void handleRx16() {
   data++;
   // Decrement dataLength by 1
   dataLength--;
-  rx16.reset();
   // Execute the instruction
   executeInstruction(instruction, data, dataLength);
+  rx16.reset();
 }
 
 void handleStatusResponse() {
@@ -160,6 +133,13 @@ void executeInstruction(uint8_t instruction, uint8_t *data, uint8_t dataLength) 
       break;
     case 0x08:
       getPos();
+      break;
+    case 0x09:
+      // We expect only one uint8 to be sent as data, indicating how many beacons will ping
+      startRssi(*data);
+      break;
+    case 0x0A:
+      nextBeacon();
       break;
     // SET instructions
     case 0x80:
@@ -405,7 +385,7 @@ void setY(float y) {
 void setAngle(float angle) {
   theta = angle;
   // IMPORTANT: Setting isHeadingSet true allows botCheck to complete
-  isHeadingSet = true;
+  isThetaSet = true;
   #if DEBUG
   Serial.print(F("Theta set to: ")); Serial.println(theta);
   #endif
@@ -447,4 +427,37 @@ void setPos(float x, float y, float angle) {
   Serial.print(F("Y Position set to: ")); Serial.println(yPosition);
   Serial.print(F("Theta set to: ")); Serial.println(theta);
   #endif
+}
+
+/*
+ * startRssi() initializes a new array of the required size
+ */
+void startRssi(uint8_t n) {
+  // Set the number of beacons
+  numBeacons = n;
+  // Allocate array
+  uint8_t vals[n];
+  // Assign pointer for reference
+  rssiValues = vals;
+  // Set the initial value
+  vals[0] = rx16.getRssi();
+  // Reset/increment beacon
+  beacon = 1;
+}
+
+void nextBeacon() {
+  // Store next RSSI value
+  rssiValues[beacon++] = rx16.getRssi();
+  // Check if we've received all the pings
+  if (beacon >= numBeacons) {
+    // Allocate payload
+    uint8_t payload[numBeacons+1];
+    // First byte is instruction
+    payload[0] = 0x09;
+    // Copy the RSSI values
+    for (int i = 0; i < numBeacons; i++)
+      payload[i+1] = rssiValues[i];
+    // Send the response with all the RSSI values
+    sendTx16Request(payload, numBeacons+1);
+  }
 }
