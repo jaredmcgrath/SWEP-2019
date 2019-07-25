@@ -51,8 +51,8 @@ typedef union {
 } ByteArray16;
 
 /////////////////////////////// Gyro Constants & Variables /////////////////////////////////////////////////
-#define GYRO_CORRECTION_SLOPE 0.000728128F  // slope for the correction line for the gyro readings
-#define GYRO_CORRECTION_INTERCEPT 0.132F    // intercept for the correction line for the gyro readings
+#define GYRO_CORRECTION_SLOPE 0.000808367F  // slope for the correction line for the gyro readings
+#define GYRO_CORRECTION_INTERCEPT -0.921095F    // intercept for the correction line for the gyro readings
 float gyroTime;                             // time when gyro measurement taken
 float gyroTimePrevious = 800;     // stores the time when the previous gyro measurment was taken !!!NEEDS TO BE INCLUDED IN STARTUP SEQUENCE!!!
 float gyroGain;                   // stores the gain value returned by the gyro for the z-axis
@@ -83,12 +83,12 @@ uint8_t numBeacons = 0, beacon = 0;
 
 ////////////////////////////// PID CONTROL ALGORITHM ////////////////////////////////////////////
 #define DIVIDER 2                               // Reduces output from controller to level that can be used in motor inputs
-float xTarget[] = {2}, yTarget[] = {2};                 // The current target point the robot is trying to reach
+float xTarget[] = {2,2,0,0}, yTarget[] = {0,2,2,0};                 // The current target point the robot is trying to reach
 int counter = 0;
-float headingDesired;                           // Heading angle from current position to target position (the set point)
+float headingDesired, headingActual;            // Heading angle from current position to target position (the set point, and actual heading of robot
 float headingError, headingErrorPrevious = 0;   // Differnece between current heading and desired heading 
 float headingErrorCum, headingErrorRate;        // Values cumulative and rate of change for heading error. Used in PID calc
-float kP = 100, kI = 0, kD = 0;                  // PID gains, Proportional, Integral and Derivative gain
+float kP = 150, kI = 0, kD = 0;                  // PID gains, Proportional, Integral and Derivative gain
 unsigned long currentTime, previousTime = 900;  // Variables used to help calcualte elapsed time
 float elapsedTime;                              // Used to determine the cumulative and rate of change for heading error
 float output;                                   // Result from PID controller
@@ -204,8 +204,14 @@ void botLoop(){
   // control process, if statement used as a delay between running control and hit target functions
   if(millis() - currentTime > 100){
     controlProcess();
+    
+    #if PRINT_RESULTS
+    printResults();
+    #endif
+
     hitTarget();
   }
+  // Print results from positionCalc, calcGyroAngle and controlProcess for each iteration of the main runtime loop
   #if PRINT_RESULTS
   printResults();
   #endif
@@ -225,16 +231,24 @@ void controlProcess(){
   // Calculate how 'off' the robot's heading is
   headingDesired = atan2((yTarget[counter]-yPosition),(xTarget[counter]-xPosition));
 
-  // determining error on heading
-  headingError = headingDesired - gyroAngleCorrected;
+  // Adjust headingActual to be within bounds of -PI to PI.
+  headingActual = gyroAngleCorrected;
+  if (headingActual > PI){
+    headingActual -= 2*PI;
+  }
   
+  // determining error on heading
+  headingError = headingDesired - headingActual;
+
+  // Ensures headingError is within bounds of -PI to PI
   if (headingError < -PI){
     headingError += 2*PI;
   }
   else if (headingError > PI){
     headingError -= 2*PI;
   }
-  
+
+  // Cumulative error on heading and rate of change of heading error
   headingErrorCum += headingError * elapsedTime/1000;
   headingErrorRate = (headingError - headingErrorPrevious)/(elapsedTime/1000);
 
@@ -253,14 +267,14 @@ void controlProcess(){
   if (leftMotorInput < 80){
     leftMotorInput = 80;
   }
-  else if (leftMotorInput > 230){
-    leftMotorInput = 230;
+  else if (leftMotorInput > 255){
+    leftMotorInput = 255;
   }
   if (rightMotorInput < 80){
     rightMotorInput = 80;
   }
-  else if (rightMotorInput > 230){
-    rightMotorInput = 230;
+  else if (rightMotorInput > 255){
+    rightMotorInput = 255;
   }
   
   // Sending the motor inputs to their respective motor
@@ -274,8 +288,9 @@ void hitTarget(){
   
   if (dist < TARGET_THRESHOLD){
     counter ++;
+    
     // ask for next target coordinates from the Host computer
-    // Need to create XBee transmissio commands to ask for this information
+    // Need to create XBee transmission commands to ask for this information
   }
 }
 
@@ -290,7 +305,11 @@ void printResults(){
   Serial.print(",");
   Serial.print(headingDesired);
   Serial.print(",");
+  Serial.print(headingActual);
+  Serial.print(",");
   Serial.print(gyroAngleCorrected);
+  Serial.print(",");
+  Serial.print(theta);
   Serial.print(",");
   Serial.println(output);
 }
