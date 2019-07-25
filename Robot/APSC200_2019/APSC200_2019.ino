@@ -8,7 +8,8 @@
 #include <SoftwareSerial.h>
 
 /////////////////////////////// Program Execution Options ///////////////////////////////////////////////
-#define DEBUG 1
+#define DEBUG 0
+#define PRINT_RESULTS 1
 #define DEST_ADDRESS 0xBEEF
 
 /////////////////////////////// Define all needed pins ///////////////////////////////////////////////
@@ -50,13 +51,13 @@ typedef union {
 } ByteArray16;
 
 /////////////////////////////// Gyro Constants & Variables /////////////////////////////////////////////////
-#define GYRO_CORRECTION_SLOPE 0.000728128F // (from excel 0.0000014956F)slope for the correction line for the gyro readings
-#define GYRO_CORRECTION_INTERCEPT 0.132F // (from excel 0.243588F) intercept for the correction line for the gyro readings
-float gyroTime; // time when gyro measurement taken
-float gyroTimePrevious = 800; // stores the time when the previous gyro measurment was taken !!!NEEDS TO BE INCLUDED IN STARTUP SEQUENCE!!!
-float gyroGain; // stores the gain value returned by the gyro for the z-axis
-float gyroAngleRaw = 0; // stores the accumulated raw angle, in degrees, measured by the gyroscope from program start
-float gyroAngleCorrected; // stores the corrected angle of the robot, in radians, measured by the gyro
+#define GYRO_CORRECTION_SLOPE 0.000808367F  // slope for the correction line for the gyro readings
+#define GYRO_CORRECTION_INTERCEPT -0.921095F    // intercept for the correction line for the gyro readings
+float gyroTime;                             // time when gyro measurement taken
+float gyroTimePrevious = 800;     // stores the time when the previous gyro measurment was taken !!!NEEDS TO BE INCLUDED IN STARTUP SEQUENCE!!!
+float gyroGain;                   // stores the gain value returned by the gyro for the z-axis
+float gyroAngleRaw = 0;           // stores the accumulated raw angle, in degrees, measured by the gyroscope from program start
+float gyroAngleCorrected;         // stores the corrected angle of the robot, in radians, measured by the gyro
 
 /////////////////////////////// Sensor Variables ///////////////////////////////////////////////
 sensor_t accelSetup, magSetup, gyroSetup, tempSetup; //Variables used to setup the sensor module
@@ -81,19 +82,25 @@ uint8_t *rssiValues;
 uint8_t numBeacons = 0, beacon = 0;
 
 ////////////////////////////// PID CONTROL ALGORITHM ////////////////////////////////////////////
-#define DIVIDER 10                              // reduces output from controller to level that can be used in motor inputs
-float xTarget = 1, yTarget = 1;                 // The current target point the robot is trying to reach
-float headingDesired;                           // heading angle from current position to target position (the set point)
-float headingError, headingErrorPrevious = 0;   // differnece between current heading and desired heading 
-float headingErrorCum, headingErrorRate;        // values cumulative and rate of change for heading error. Used in PID calc
-float kP = 20, kI = 0.1, kD = 0;                // PID gains, Proportional, Integral and Derivative gain
-unsigned long currentTime, previousTime = 900;  // variables used to help calcualte elapsed time
+#define DIVIDER 2                               // Reduces output from controller to level that can be used in motor inputs
+float xTarget[] = {2,2,0,0}, yTarget[] = {0,2,2,0};                 // The current target point the robot is trying to reach
+int counter = 0;
+float headingDesired, headingActual;            // Heading angle from current position to target position (the set point, and actual heading of robot
+float headingError, headingErrorPrevious = 0;   // Differnece between current heading and desired heading 
+float headingErrorCum, headingErrorRate;        // Values cumulative and rate of change for heading error. Used in PID calc
+float kP = 150, kI = 0, kD = 0;                  // PID gains, Proportional, Integral and Derivative gain
+unsigned long currentTime, previousTime = 900;  // Variables used to help calcualte elapsed time
 float elapsedTime;                              // Used to determine the cumulative and rate of change for heading error
 float output;                                   // Result from PID controller
-int leftMotorInput, rightMotorInput;            // Right and Left motor inputs
+int leftMotorInput, rightMotorInput;            // Right and left motor inputs
+
+///////////////////////////// HIT TARGET ///////////////////////////////////////////////////////
+#define TARGET_THRESHOLD 0.05F 
+float dist = 0;
+
 
 /////////////////////////////// Other Variables /////////////////////////////////////////////////
-int leftInput = 0, rightInput = 0; //A variable to convert the wheel speeds from char (accepted), to int
+int leftInput = 0, rightInput = 0; // A variable to convert the wheel speeds from char (accepted), to int
 
 // Interruptible movement variables
 // If Arduino is moving for a fixed duration
@@ -124,7 +131,7 @@ Rx16Response rx16 = Rx16Response();
 //////////////////////////////// Setup ////////////////////////////////////////////////////////////
 
 void setup(){
-  #if DEBUG
+  #if DEBUG || PRINT_RESULTS
   Serial.begin(9600);
   #endif
 
@@ -194,10 +201,21 @@ void botLoop(){
   positionCalc();
   // Calculates heading using the gyroscope
   calcGyroAngle();
-  // control process, if statement used as a delay between running function
+  // control process, if statement used as a delay between running control and hit target functions
   if(millis() - currentTime > 100){
     controlProcess();
+    
+    #if PRINT_RESULTS
+    printResults();
+    #endif
+
+    hitTarget();
   }
+  // Print results from positionCalc, calcGyroAngle and controlProcess for each iteration of the main runtime loop
+  #if PRINT_RESULTS
+  printResults();
+  #endif
+  
   // Check for any instructions
   checkForIns();
   // Check if movement should be interrupted
@@ -206,47 +224,92 @@ void botLoop(){
 
 // This function controls the motion of the robot such that it reaches its destination target
 void controlProcess(){
-  // Obtain current time and calcualte the time elapsed from the previous run of the function
+  // Obtain current time and calculate the time elapsed from the previous run of the function
   currentTime = millis();
   elapsedTime = (float) currentTime - previousTime;
 
-  // Calcualte how 'off' the robot's heading is
-  headingDesired = atan2((yTarget-yPosition),(xTarget-xPosition));
+  // Calculate how 'off' the robot's heading is
+  headingDesired = atan2((yTarget[counter]-yPosition),(xTarget[counter]-xPosition));
 
-  headingError = headingDesired - gyroAngleCorrected;
-  headingErrorCum = headingError * elapsedTime;
-  headingErrorRate = (headingError - headingErrorPrevious)/elapsedTime;
+  // Adjust headingActual to be within bounds of -PI to PI.
+  headingActual = gyroAngleCorrected;
+  if (headingActual > PI){
+    headingActual -= 2*PI;
+  }
+  
+  // determining error on heading
+  headingError = headingDesired - headingActual;
 
+  // Ensures headingError is within bounds of -PI to PI
+  if (headingError < -PI){
+    headingError += 2*PI;
+  }
+  else if (headingError > PI){
+    headingError -= 2*PI;
+  }
+
+  // Cumulative error on heading and rate of change of heading error
+  headingErrorCum += headingError * elapsedTime/1000;
+  headingErrorRate = (headingError - headingErrorPrevious)/(elapsedTime/1000);
+
+  // Control equation
   output = kP*headingError + kI*headingErrorCum + kD*headingErrorRate;
 
+  // Saving data that will be required for the next iteration of control algorithm
   headingErrorPrevious = headingError;
   previousTime = currentTime;
 
-  leftMotorInput = 175 - output/DIVIDER;
-  rightMotorInput = 175 + output/DIVIDER;
+  // Calculates the wheel inputs using the control output
+  leftMotorInput = 120 - output/DIVIDER;
+  rightMotorInput = 120 + output/DIVIDER;
 
-  if (leftMotorInput < 150){
-    leftMotorInput = 150;
+  // Ensures wheels still rotate and dont slip.
+  if (leftMotorInput < 80){
+    leftMotorInput = 80;
   }
-  if (rightMotorInput < 150){
-    rightMotorInput = 150;
+  else if (leftMotorInput > 255){
+    leftMotorInput = 255;
+  }
+  if (rightMotorInput < 80){
+    rightMotorInput = 80;
+  }
+  else if (rightMotorInput > 255){
+    rightMotorInput = 255;
   }
   
-  // Translating the Control Process output to meaningful motor inputs
-  // driveArdumoto(MOTOR_L, leftMotorInput);
-  // driveArdumoto(MOTOR_R, rightMotorInput);
+  // Sending the motor inputs to their respective motor
+  driveArdumoto(MOTOR_L, leftMotorInput);
+  driveArdumoto(MOTOR_R, rightMotorInput);
 
-   #if DEBUG
-  Serial.print(currentTime);
+}
+
+void hitTarget(){
+  dist = sqrt(pow((yTarget[counter]-yPosition),2)+pow((xTarget[counter]-xPosition),2));
+  
+  if (dist < TARGET_THRESHOLD){
+    counter ++;
+    
+    // ask for next target coordinates from the Host computer
+    // Need to create XBee transmission commands to ask for this information
+  }
+}
+
+void printResults(){
+  Serial.print(xPosition);
+  Serial.print(",");
+  Serial.print(yPosition);
+  Serial.print(",");
+  Serial.print(xTarget[counter]);
+  Serial.print(",");
+  Serial.print(yTarget[counter]);
   Serial.print(",");
   Serial.print(headingDesired);
   Serial.print(",");
+  Serial.print(headingActual);
+  Serial.print(",");
   Serial.print(gyroAngleCorrected);
   Serial.print(",");
-  Serial.print(output);
+  Serial.print(theta);
   Serial.print(",");
-  Serial.print(175+output/DIVIDER);
-  Serial.print(",");
-  Serial.println(175-output/DIVIDER);
-  #endif  
+  Serial.println(output);
 }
