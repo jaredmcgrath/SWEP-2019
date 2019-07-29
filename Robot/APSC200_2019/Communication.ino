@@ -435,19 +435,16 @@ void setPos(float x, float y, float angle) {
 void startRssi(uint8_t n) {
   // Set the number of beacons
   numBeacons = n;
-  // Allocate array
-  uint8_t vals[n];
-  // Assign pointer for reference
-  rssiValues = vals;
   // Set the initial value
-  vals[0] = rx16.getRssi();
+  rssiValues[0] = rx16.getRssi();
   // Reset/increment beacon
   beacon = 1;
 }
 
 void nextBeacon() {
   // Store next RSSI value
-  rssiValues[beacon++] = rx16.getRssi();
+  rssiValues[beacon] = rx16.getRssi();
+  beacon++;
   // Check if we've received all the pings
   if (beacon >= numBeacons) {
     // Allocate payload

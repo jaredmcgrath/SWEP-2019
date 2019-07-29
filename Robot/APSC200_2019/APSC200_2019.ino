@@ -78,7 +78,7 @@ float xPosition = 0, yPosition = 0; // Stores the robot's current x and y positi
 float theta = 0; // Stores the current angle of the robot, from the gyro
 
 ////////////////////////////// Localization (with XBees) ////////////////////////////////////////
-uint8_t *rssiValues;
+uint8_t rssiValues[32];
 uint8_t numBeacons = 0, beacon = 0;
 
 ////////////////////////////// PID CONTROL ALGORITHM ////////////////////////////////////////////
@@ -203,13 +203,13 @@ void botLoop(){
   calcGyroAngle();
   // control process, if statement used as a delay between running control and hit target functions
   if(millis() - currentTime > 100){
-    controlProcess();
+    //controlProcess();
     
     #if PRINT_RESULTS
     printResults();
     #endif
 
-    hitTarget();
+    //hitTarget();
   }
   // Print results from positionCalc, calcGyroAngle and controlProcess for each iteration of the main runtime loop
   #if PRINT_RESULTS

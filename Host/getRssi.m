@@ -105,6 +105,6 @@ if ~isempty(rResponses)
     % Get the final response using the sorted index
     rssi = unsorted(ABi,:);
     % Remove the ID column
-    rssi = rssi(:,2:end);
+    rssi = -double(rssi(:,2:end));
 end
 

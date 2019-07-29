@@ -37,7 +37,7 @@ unsigned long endTime;
 bool isMovingFixed = false, isThetaSet = false;
 int lastLeftTicks = 0, lastRightTicks = 0, leftEncoder = 0, rightEncoder = 0;
 
-uint8_t *rssiValues;
+uint8_t rssiValues[32];
 uint8_t numBeacons = 0, beacon = 0;
 
 XBee xbee = XBee();
