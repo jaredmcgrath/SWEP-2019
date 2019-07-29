@@ -4,7 +4,7 @@ function [slope, intercept] = calibrateWheels(config, tags)
 % ticks
 %
 % Parameters:
-%   config
+%   serialPort
 %     The config struct (see parseConfig.m)
 %   tags
 %     Character vector of the bots' tags that are being used. Should only

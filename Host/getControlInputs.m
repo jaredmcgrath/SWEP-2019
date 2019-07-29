@@ -2,7 +2,15 @@ function controlInput = getControlInputs(config, position, heading,...
     desiredPosition, slope, intercept)
 %% getControlInputs
 % Determines the proper control inputs to move bots to their desired
-% positions
+% positions. 
+%
+% Note to the programmer: This function is the result of
+% combining many smaller control functions from the SWEP 2018 code. It
+% seems to be functionally correct, but needs tuning. Additionally, having
+% the controller NOT on the robot leads to poor performance due to timing
+% bottlenecks in transmission times.
+%
+% TODO: Determine the best weighting for the cost matrix
 %
 % Parameters:
 %   config
@@ -26,7 +34,6 @@ function controlInput = getControlInputs(config, position, heading,...
 %     n-by-2 vector of control inputs (-255<=input<=255) in 
 %     [L1 R1; L2 R2; ... ] format
 
-% TODO: Test new code
 %% Constants
 % Distance from center of chassis to edge of wheel
 rChassis = config.rChassis;
@@ -85,35 +92,11 @@ end
 controlInput = [(u(:,1) - rChassis.*u(:,2)), (u(:,1) + rChassis.*u(:,2))]...
     /rWheel;
 
-% Old, for reference
-% Wr = u(1)./rWheel + rChassis.*u(2)./rWheel;
-% Wl = u(1)./rWheel - rChassis.*u(2)./rWheel;
-
 % Apply the linear calibration coefficients to yield actual inputs
 controlInput = (controlInput.*slope) + (sign(controlInput).*slope);
-
-% Old, for reference
-% Wr = rightInputSlope*Wr + sign(Wr)*rightInputIntercept;
-% Wl = leftInputSlope*Wl + sign(Wl)*leftInputIntercept;
 
 % Ensure wheel inputs are integers in the proper range
 controlInput(controlInput>255) = 255;
 controlInput(controlInput<-255) = -255;
-% boostIdx = find(abs(controlInput) > 40 & abs(controlInput) < intercept);
-% controlInput(boostIdx) = sign(controlInput(boostIdx)).*(intercept(boostIdx)+30);
+% controlInput(abs(controlInput)<=intercept) = 0;
 controlInput = round(controlInput);
-
-% Old, for reference
-% if abs(Wr) > 255
-%     Wr = 255*sign(Wr);
-% elseif abs(Wr) <= 100
-%     Wr = 0;
-% end
-% Wr = round(Wr);
-% 
-% if abs(Wl) > 255
-%     Wl = 255*sign(Wl);
-%     elseif abs(Wl) <= 100
-%     Wl = 0;
-% end
-% Wl = round(Wl);

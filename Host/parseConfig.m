@@ -21,10 +21,12 @@ function config = parseConfig(path)
 %        Radius of the robot's chassis
 %      rWheel
 %        Radius of the robot's wheel
+%      duration
+%        Duration bots move for in a fixed-duration movement
 %      validTags
 %       A string, where each character is that of one bot
-%      tagIdStruct
-%       A struct containing the numerical ID of each bot corresponding to
+%      tagAddressStruct
+%       A struct containing the XBee address of each bot corresponding to
 %       their character tag
 %      insStruct
 %       A struct containing the numerical value of each instruction
@@ -63,6 +65,11 @@ rChassis = str2double(rChassisNode.getTextContent());
 rWheelNode = configDOM.getElementsByTagName('wheelRadius');
 rWheelNode = rWheelNode.item(0);
 rWheel = str2double(rWheelNode.getTextContent());
+
+% Get movementDuration
+durNode = configDOM.getElementsByTagName('duration');
+durNode = durNode.item(0);
+duration = str2double(durNode.getTextContent());
 
 % Get bot tags/ids
 tagNodes = configDOM.getElementsByTagName('bot');
@@ -150,4 +157,5 @@ end
 config = struct('maxX',maxX,'maxY',maxY,'maxError',maxError,'validTags',...
     validTags,'tagAddressStruct',tagAddressStruct,'insStruct',insStruct,'slope',...
     slope,'intercept',intercept,'rChassis',rChassis,'rWheel',rWheel,...
-    'beacons',beacons,'beaconPositions',beaconPositions);
+    'beacons',beacons,'beaconPositions',beaconPositions,'duration',...
+    duration);

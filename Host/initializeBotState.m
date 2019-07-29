@@ -1,7 +1,7 @@
 function [positions, tags, theta] = initializeBotState(config)
 %% initializeBotState
 % Query user for:
-%   - Bot tags
+%   - Bot tags being used
 %   - Each bot's initial position
 %   - Heading of the positive x-axis
 %
