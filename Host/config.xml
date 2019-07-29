@@ -6,8 +6,8 @@
         <maxY>5.12</maxY>
     </boundary>
       
-    <chassisRadius>0.0630</chassisRadius>
-    <wheelRadius>0.0315</wheelRadius>
+    <chassisRadius>0.08</chassisRadius>
+    <wheelRadius>0.034</wheelRadius>
     
     <maxError>0.1</maxError>
     

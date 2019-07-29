@@ -384,8 +384,6 @@ void setY(float y) {
 
 void setAngle(float angle) {
   theta = angle;
-  // IMPORTANT: Setting isHeadingSet true allows botCheck to complete
-  isThetaSet = true;
   #if DEBUG
   Serial.print(F("Theta set to: ")); Serial.println(theta);
   #endif

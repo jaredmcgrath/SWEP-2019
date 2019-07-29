@@ -12,7 +12,6 @@ void rightEncoderTicks(){ // runs in the background updating right encoder value
 //this estimation uses the encoders and the angle of the robot
 //  xPosition and yPosition are set to be the origin of the coordinate system. 
 //  theta, the intial heading, is set to be zero degrees
-//  Ts is the defined time step for each iteration of robot motion
 
 void positionCalc(){
   float leftRads, rightRads;
@@ -20,16 +19,22 @@ void positionCalc(){
   leftRads = (leftEncoder - oldLeftEncoder) * 2 * PI / 192;
   rightRads = (rightEncoder - oldRightEncoder) * 2 * PI / 192;
 
-  // Calcualte the x and y position of the robot. (OLD VERSION: Used theta instead of gyroAngleCorrected)
-  xPosition = xPosition + cos(gyroAngleCorrected)*rWheel*0.5*(leftRads+rightRads);
-  yPosition = yPosition + sin(gyroAngleCorrected)*rWheel*0.5*(leftRads+rightRads);
+  // Calcualte the x and y position of the robot
+  xPosition = xPosition + cos(theta)*rWheel*0.5*(leftRads+rightRads);
+  yPosition = yPosition + sin(theta)*rWheel*0.5*(leftRads+rightRads);
 
-  // calculates the change in theta for the iteration of robot motion.
-  theta += (rWheel /(2 * rChasis)) * (rightRads - leftRads);
+  // Calculate theta from gyro angle
+  theta = calcGyroAngle();
 
-  // Ensure theta is within 0 to 2*pi
-  theta = theta > 2*PI ? theta - 2*PI : (theta < 0 ? theta + 2*PI : theta);
-
+  // Update encoder tracking variables
   oldLeftEncoder = leftEncoder;
   oldRightEncoder = rightEncoder;
+
+  // Old code that calculates theta with encoders
+//  // calculates the change in theta for the iteration of robot motion.
+//  theta += (rWheel /(2 * rChasis)) * (rightRads - leftRads);
+//
+//  // Ensure theta is within 0 to 2*pi
+//  theta = theta > 2*PI ? theta - 2*PI : (theta < 0 ? theta + 2*PI : theta);
+
 }

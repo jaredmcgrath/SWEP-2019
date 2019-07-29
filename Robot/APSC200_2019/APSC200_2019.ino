@@ -8,8 +8,11 @@
 #include <SoftwareSerial.h>
 
 /////////////////////////////// Program Execution Options ///////////////////////////////////////////////
+// DEBUG prints more stuff for debugging
 #define DEBUG 0
-#define PRINT_RESULTS 1
+// MEGA is 1 if the board is an arduino mega. In this case, the XBee will communicate over Serial3. Otherwise, the XBee will use a software serial
+#define MEGA 0
+// DEST_ADDRESS is the MY address of the main XBee, which all robots will send responses to
 #define DEST_ADDRESS 0xBEEF
 
 /////////////////////////////// Define all needed pins ///////////////////////////////////////////////
@@ -21,7 +24,7 @@
 #define DIRA 8 // Direction control for motor A
 #define PWMA 9  // PWM control (speed) for motor A
 #define PWMB 10 // PWM control (speed) for motor B
-#define BATTERY_PIN A1   // battery level indicator pin. Would be hooked up to votlage divider from 9v barrel jack, but currently not implemented
+#define BATTERY_PIN A1   // battery level indicator pin. Not implemented
 
 /*
  * Data structures used for encoding/decoding information
@@ -57,13 +60,10 @@ float gyroTime;                             // time when gyro measurement taken
 float gyroTimePrevious = 800;     // stores the time when the previous gyro measurment was taken !!!NEEDS TO BE INCLUDED IN STARTUP SEQUENCE!!!
 float gyroGain;                   // stores the gain value returned by the gyro for the z-axis
 float gyroAngleRaw = 0;           // stores the accumulated raw angle, in degrees, measured by the gyroscope from program start
-float gyroAngleCorrected;         // stores the corrected angle of the robot, in radians, measured by the gyro
 
 /////////////////////////////// Sensor Variables ///////////////////////////////////////////////
 sensor_t accelSetup, magSetup, gyroSetup, tempSetup; //Variables used to setup the sensor module
 sensors_event_t accel, mag, gyro, temp; // Variables to store current sensor event data
-//float heading, baseline = 0; // Variables to store the calculated heading and the baseline variable (Baseline may be unnecessary)
-bool isThetaSet = false;
 
 /////////////////////////////// Encoder Variables ///////////////////////////////////////////////
 int oldLeftEncoder = 0, oldRightEncoder = 0; // Stores the encoder value from the loop prior to estimate x, y position
@@ -73,31 +73,12 @@ int lastLeftTicks = 0, lastRightTicks = 0; // Ticks upon last call of getLeftTic
 /////////////////////////////// Position Variables ///////////////////////////////////////////////
 float rWheel = 0.034, rChasis = 0.08;// Radius of the robot wheels
 float leftRads = 0, rightRads = 0; // Stores the left and right radians of the wheels (from encoder values)
-float deltaTheta; // change in theta for each iteration of robot motion
 float xPosition = 0, yPosition = 0; // Stores the robot's current x and y position estimate from the encoders
 float theta = 0; // Stores the current angle of the robot, from the gyro
 
 ////////////////////////////// Localization (with XBees) ////////////////////////////////////////
 uint8_t rssiValues[32];
 uint8_t numBeacons = 0, beacon = 0;
-
-////////////////////////////// PID CONTROL ALGORITHM ////////////////////////////////////////////
-#define DIVIDER 2                               // Reduces output from controller to level that can be used in motor inputs
-float xTarget[] = {2,2,0,0}, yTarget[] = {0,2,2,0};                 // The current target point the robot is trying to reach
-int counter = 0;
-float headingDesired, headingActual;            // Heading angle from current position to target position (the set point, and actual heading of robot
-float headingError, headingErrorPrevious = 0;   // Differnece between current heading and desired heading 
-float headingErrorCum, headingErrorRate;        // Values cumulative and rate of change for heading error. Used in PID calc
-float kP = 150, kI = 0, kD = 0;                  // PID gains, Proportional, Integral and Derivative gain
-unsigned long currentTime, previousTime = 900;  // Variables used to help calcualte elapsed time
-float elapsedTime;                              // Used to determine the cumulative and rate of change for heading error
-float output;                                   // Result from PID controller
-int leftMotorInput, rightMotorInput;            // Right and left motor inputs
-
-///////////////////////////// HIT TARGET ///////////////////////////////////////////////////////
-#define TARGET_THRESHOLD 0.05F 
-float dist = 0;
-
 
 /////////////////////////////// Other Variables /////////////////////////////////////////////////
 int leftInput = 0, rightInput = 0; // A variable to convert the wheel speeds from char (accepted), to int
@@ -110,41 +91,56 @@ unsigned long endTime;
 
 /////////////////////////////// Agent Tag Data - CHANGE FOR EACH ROBOT ///////////////////////////////////////////////
 /*
- * ID's should be numbered 0-6 inclusively
+ * Shannon = 0
+ * Euler = 1
+ * Laplace = 2
  */
-byte message[2];
-#define ALL_AGENTS 7
-#define ID 0
-byte id = ID;
+byte id = 0;
 
 ////////////////////////////////////////////////////////// Object Declarations //////////////////////////////////////////////////////////
-Adafruit_LSM9DS0 lsm = Adafruit_LSM9DS0(); //An object for the sensor module, to be accessed to get the data
-SoftwareSerial xbeeSerial(4,5);
+// Sensor module object declaration
+Adafruit_LSM9DS0 lsm = Adafruit_LSM9DS0();
+// XBee object declaration
 XBee xbee = XBee();
+
+#if MEGA
+Stream xbeeSerial = Serial3;
+#else
+SoftwareSerial xbeeSerial(4,5);
+#endif
+
 // Tx/Rx Objects. Decalred once and reused to conserve space
 Tx16Request tx = Tx16Request(DEST_ADDRESS, NULL, 0);
 TxStatusResponse txStatus = TxStatusResponse();
-// Generic response, before cast to specific response type
 XBeeResponse response = XBeeResponse();
 Rx16Response rx16 = Rx16Response();
 
 //////////////////////////////// Setup ////////////////////////////////////////////////////////////
 
 void setup(){
-  #if DEBUG || PRINT_RESULTS
+  #if DEBUG
   Serial.begin(9600);
   #endif
 
-  // Assuming we have the Xbee on serial port 3
+  // Initialize the XBee Serial
   xbeeSerial.begin(9600);
 
-  // Initialize the XBee with a reference to the broadcast output serial 
-  // The default Serial (as opposed to Serial1, etc. on Mega board) stream object, which uses rx pin 0 and tx pin 1
-  // This is baked into the Arduino firmware. A virtual Serial could be created using the SoftwareSerial library
-  // However, this would require the XBee Arduino header to be rewired to whatever output pins are needed
+/*
+ * The XBee needs a reference to a Stream object to act as a serial port for communication.
+ * The Stream object needs to be physically wired to the XBee shield's rx and tx pins.
+ * 
+ * All Arduino boards have a hardware serial named Serial, connected to pins 0 and 1.
+ * This serial port is used to program the Arduino's EEPROM when code is uploaded, and when calling 
+ * Serial.print() for debugging purposes. This means on Arduino Uno boards, a SoftwareSerial must be used
+ * to use the XBee hile the Serial is used for debug prints.
+ * 
+ * In addition to Serial, an Arduino Mega board has multiple hardware serials, namely Serial1, Serial2, and Serial3.
+ * These ports are connected to pins 14-21. When using a Mega, we use the Serial3 for the XBee's serial port
+ * because hardware serial ports perform better.
+ */
   xbee.setSerial(xbeeSerial);
   
-  botSetup(); // Set's up Bot configuration
+  botSetup(); // Sets up Bot configuration
 
   #if DEBUG
   Serial.println(F("\n\nRobot setup complete, beginning main loop\n\n"));
@@ -167,8 +163,6 @@ void botSetup(){
     while (!Serial);     // will pause Zero, Leonardo, etc until serial console opens
   #endif
 
-  // Initialize serial port via XBee
-  
   // Ensure sensor module is intact
   if(!lsm.begin()) {
     Serial.print(F("Ooops, no LSM9DS0 detected ... Check your wiring!"));
@@ -176,9 +170,14 @@ void botSetup(){
   }
 
   // Setup routines
-  displaySensorDetails(); //Shows the details about the sensor module, could be removed or put in an if(DEBUG) statement
-  configureSensor(); //Configures the sensitivity of the sensor module
-  setupArdumoto(); //Sets up the ardumoto shield for the robot's motors
+  #if DEBUG
+  displaySensorDetails();
+  #endif
+
+  // Configure sensor module sensitivity
+  configureSensor();
+  // Set up the ardumoto shield for the robot's motors
+  setupArdumoto();
 
   // Pin config
   pinMode(ENCODER_L, INPUT_PULLUP); // Set the mode for the encoder pins
@@ -199,117 +198,8 @@ void botSetup(){
 void botLoop(){
   // Update bot position using encoders/dead reckoning
   positionCalc();
-  // Calculates heading using the gyroscope
-  calcGyroAngle();
-  // control process, if statement used as a delay between running control and hit target functions
-  if(millis() - currentTime > 100){
-    //controlProcess();
-    
-    #if PRINT_RESULTS
-    printResults();
-    #endif
-
-    //hitTarget();
-  }
-  // Print results from positionCalc, calcGyroAngle and controlProcess for each iteration of the main runtime loop
-  #if PRINT_RESULTS
-  printResults();
-  #endif
-  
   // Check for any instructions
   checkForIns();
   // Check if movement should be interrupted
   interruptMovement();
-}
-
-// This function controls the motion of the robot such that it reaches its destination target
-void controlProcess(){
-  // Obtain current time and calculate the time elapsed from the previous run of the function
-  currentTime = millis();
-  elapsedTime = (float) currentTime - previousTime;
-
-  // Calculate how 'off' the robot's heading is
-  headingDesired = atan2((yTarget[counter]-yPosition),(xTarget[counter]-xPosition));
-
-  // Adjust headingActual to be within bounds of -PI to PI.
-  headingActual = gyroAngleCorrected;
-  if (headingActual > PI){
-    headingActual -= 2*PI;
-  }
-  
-  // determining error on heading
-  headingError = headingDesired - headingActual;
-
-  // Ensures headingError is within bounds of -PI to PI
-  if (headingError < -PI){
-    headingError += 2*PI;
-  }
-  else if (headingError > PI){
-    headingError -= 2*PI;
-  }
-
-  // Cumulative error on heading and rate of change of heading error
-  headingErrorCum += headingError * elapsedTime/1000;
-  headingErrorRate = (headingError - headingErrorPrevious)/(elapsedTime/1000);
-
-  // Control equation
-  output = kP*headingError + kI*headingErrorCum + kD*headingErrorRate;
-
-  // Saving data that will be required for the next iteration of control algorithm
-  headingErrorPrevious = headingError;
-  previousTime = currentTime;
-
-  // Calculates the wheel inputs using the control output
-  leftMotorInput = 120 - output/DIVIDER;
-  rightMotorInput = 120 + output/DIVIDER;
-
-  // Ensures wheels still rotate and dont slip.
-  if (leftMotorInput < 80){
-    leftMotorInput = 80;
-  }
-  else if (leftMotorInput > 255){
-    leftMotorInput = 255;
-  }
-  if (rightMotorInput < 80){
-    rightMotorInput = 80;
-  }
-  else if (rightMotorInput > 255){
-    rightMotorInput = 255;
-  }
-  
-  // Sending the motor inputs to their respective motor
-  driveArdumoto(MOTOR_L, leftMotorInput);
-  driveArdumoto(MOTOR_R, rightMotorInput);
-
-}
-
-void hitTarget(){
-  dist = sqrt(pow((yTarget[counter]-yPosition),2)+pow((xTarget[counter]-xPosition),2));
-  
-  if (dist < TARGET_THRESHOLD){
-    counter ++;
-    
-    // ask for next target coordinates from the Host computer
-    // Need to create XBee transmission commands to ask for this information
-  }
-}
-
-void printResults(){
-  Serial.print(xPosition);
-  Serial.print(",");
-  Serial.print(yPosition);
-  Serial.print(",");
-  Serial.print(xTarget[counter]);
-  Serial.print(",");
-  Serial.print(yTarget[counter]);
-  Serial.print(",");
-  Serial.print(headingDesired);
-  Serial.print(",");
-  Serial.print(headingActual);
-  Serial.print(",");
-  Serial.print(gyroAngleCorrected);
-  Serial.print(",");
-  Serial.print(theta);
-  Serial.print(",");
-  Serial.println(output);
 }

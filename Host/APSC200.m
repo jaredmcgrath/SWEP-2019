@@ -26,7 +26,7 @@ addpath('XBee');
 % their states
 [position, tags, theta] = initializeBotState(config);
 % Send initial positions to bots
-sendInitialState(config.beacons(1), position, tags, theta);
+sendInitialState(config, position, tags, theta);
 disp('Bots setup successfully');
 % END BOT SETUP
 
