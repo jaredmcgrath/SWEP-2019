@@ -17,40 +17,16 @@
           <tag>S</tag>
           <address>0</address>
           <name>Shannon</name>
-          <leftWheel>
-                <slope>9</slope>
-                <intercept>140</intercept>
-          </leftWheel>
-          <rightWheel>
-                <slope>13</slope>
-                <intercept>105</intercept>
-          </rightWheel>
     </bot>
     <bot>
           <tag>E</tag>
           <address>1</address>
           <name>Euler</name>
-          <leftWheel>
-                <slope>6.5068</slope>
-                <intercept>110</intercept>
-          </leftWheel>
-          <rightWheel>
-                <slope>7.6076</slope>
-                <intercept>110</intercept>
-          </rightWheel>
     </bot>
     <bot>
           <tag>L</tag>
           <address>2</address>
           <name>Laplace</name>
-          <leftWheel>
-                <slope>7.711</slope>
-                <intercept>125</intercept>
-          </leftWheel>
-          <rightWheel>
-                <slope>7.5037</slope>
-                <intercept>125</intercept>
-          </rightWheel>
     </bot>
 
     <beacon>
@@ -64,10 +40,6 @@
       <y>1</y>
     </beacon>
 
-    <instruction>
-          <name>GO</name>
-          <value>0</value>
-    </instruction>
     <instruction>
           <name>GET_X</name>
           <value>1</value>
@@ -109,6 +81,14 @@
           <value>10</value>
     </instruction>
     <instruction>
+          <name>GET_NEXT</name>
+          <value>11</value>
+    </instruction>
+    <instruction>
+          <name>START_LOCAL</name>
+          <value>12</value>
+    </instruction>
+    <instruction>
           <name>SET_X</name>
           <value>128</value>
     </instruction>
@@ -121,24 +101,8 @@
           <value>130</value>
     </instruction>
     <instruction>
-          <name>SET_M_L</name>
-          <value>131</value>
-    </instruction>
-    <instruction>
-          <name>SET_M_R</name>
-          <value>132</value>
-    </instruction>
-    <instruction>
-          <name>GO_F</name>
-          <value>133</value>
-    </instruction>
-    <instruction>
           <name>SET_POS</name>
           <value>134</value>
-    </instruction>
-    <instruction>
-        <name>G_GO</name>
-        <value>0</value>
     </instruction>
     <instruction>
           <name>G_GET_X</name>
@@ -163,9 +127,5 @@
     <instruction>
           <name>G_GET_RSSI</name>
           <value>9</value>
-    </instruction>
-    <instruction>
-          <name>G_GO_F</name>
-          <value>133</value>
     </instruction>
 </config>

@@ -31,12 +31,6 @@ function config = parseConfig(path)
 %      insStruct
 %       A struct containing the numerical value of each instruction
 %       corresponding to the string value
-%      slope
-%       n-by-2 matrix of slopes in [left right; left right; ... ] format,
-%       where n is length of allTags
-%      intercept
-%       n-by-2 matrix of intercepts in [left right; left right; ... ] format,
-%       where n is length of allTags
 %      beacons
 %       Extra beacons for RSSI pings
 
@@ -101,40 +95,6 @@ for i = 0:insNodes.getLength-1
     insStruct.(name) = value;
 end
 
-% Get wheels params
-slope = zeros(length(validTags), 2);
-intercept = zeros(length(validTags), 2);
-% Left wheels
-leftNodes = configDOM.getElementsByTagName('leftWheel');
-for i = 0:leftNodes.getLength-1
-    wheel = leftNodes.item(i);
-    % The slope node for this wheel
-    s = wheel.getElementsByTagName('slope');
-    s = s.item(0);
-    s = str2double(s.getTextContent());
-    slope(i+1, 1) = s;
-    % The intercept node for this wheel
-    in = wheel.getElementsByTagName('intercept');
-    in = in.item(0);
-    in = str2double(in.getTextContent());
-    intercept(i+1, 1) = in;
-end
-% Right wheels
-rightNodes = configDOM.getElementsByTagName('rightWheel');
-for i = 0:rightNodes.getLength-1
-    wheel = rightNodes.item(i);
-    % The slope node for this wheel
-    s = wheel.getElementsByTagName('slope');
-    s = s.item(0);
-    s = str2double(s.getTextContent());
-    slope(i+1, 2) = s;
-    % The intercept node for this wheel
-    in = wheel.getElementsByTagName('intercept');
-    in = in.item(0);
-    in = str2double(in.getTextContent());
-    intercept(i+1, 2) = in;
-end
-
 % Beacons
 beaconNodes = configDOM.getElementsByTagName('beacon');
 for i = 0:beaconNodes.getLength-1
@@ -155,7 +115,6 @@ end
 
 % Put all values into a struct
 config = struct('maxX',maxX,'maxY',maxY,'maxError',maxError,'validTags',...
-    validTags,'tagAddressStruct',tagAddressStruct,'insStruct',insStruct,'slope',...
-    slope,'intercept',intercept,'rChassis',rChassis,'rWheel',rWheel,...
-    'beacons',beacons,'beaconPositions',beaconPositions,'duration',...
-    duration);
+    validTags,'tagAddressStruct',tagAddressStruct,'insStruct',insStruct,...
+    'rChassis',rChassis,'rWheel',rWheel, 'beacons',beacons,...
+    'beaconPositions',beaconPositions,'duration',duration);

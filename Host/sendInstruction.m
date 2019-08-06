@@ -1,6 +1,7 @@
-function response = sendInstruction(config, instruction, tag, data)
+function [response, overlapResponses] = sendInstruction(config, ...
+    instruction, tag, data)
 %% sendInstruction
-% Sends an instruction
+% Sends an instruction. config.beacons(1) should be an open serial port.
 %
 % Parameters:
 %   config
@@ -22,6 +23,10 @@ function response = sendInstruction(config, instruction, tag, data)
 %   response (optional)
 %     If the instruction obtains a response from any bots, this value will
 %     be non-empty
+%   overlapResponses
+%     Array of XBeeResponse objects that were received during this
+%     instruction, but should be handled as independent requests by the
+%     calling function
 
 %% Generate request payload
 % Global commands only vary in the destination address. The bots will
@@ -55,6 +60,8 @@ switch instruction
     % Sending 3 float32 data
     case 'SET_POS'
         msg(2:13) = typecast(single(data),'uint8');
+    case 'START_LOCAL'
+        msg(2:9) = typecast(single(data),'uint8');
 end
 
 %% Send and validate response
@@ -64,10 +71,11 @@ request = Tx16Request(address,msg,1);
 valid = false;
 
 while ~valid
-    xbeeResponses = sendAndParse(config.beacons(1), request);
+    xbeeResponses = sendAndParse(config.beacons(1), request, true, false);
     valid = true;
     txResponses = TxStatusResponse.empty;
-    rResponses = RobotResponse.empty;
+    actualResponses = RobotResponse.empty;
+    overlapResponses = XBeeResponse.empty;
     % Need to parse through responses, and ensure all TxStatusResponses are
     % successful. Otherwise, resend the request
     for i = 1:length(xbeeResponses)
@@ -83,10 +91,19 @@ while ~valid
             % Although we're casting to RobotResponse, the API id is still
             % RX16Response
             case XBeeConst.RX_16_RESPONSE
-                rResponses(end+1) = xbeeResponses(i).RobotResponse();
+                rResponse = xbeeResponses(i).RobotResponse();
+                % If this response is a response to the instruction
+                if rResponse.instruction == config.insStruct.(instruction)
+                    actualResponses(end+1) = rResponse;
+                else
+                    % This is the case where a request from another bot was
+                    % sent simultaneously. Needs to be returned to caller
+                    % and handled seperately
+                    overlapResponses(end+1) = xbeeResponses(i);
+                end
                 % If any RobotResponses are invalid, break and resend the
                 % request
-                if ~rResponses(end).isValid
+                if ~rResponse.isValid
                     valid = false;
                     break
                 end
@@ -97,25 +114,26 @@ while ~valid
 end
 
 %% Parse response data
+response = [];
 % If we received response(s)
-if ~isempty(rResponses)
+if ~isempty(actualResponses)
     % For all global responses, need to establish the sort order based on
     % the order of the tag argument. Then, decode responses and sort them
     if isGlobal
         % This constructs the order in which we want the response
         idOrder = arrayfun(@(t) config.tagAddressStruct.(tag(t)), 1:length(tag));
         % Get the actual address order
-        receivedOrder = arrayfun(@(x) x.id, rResponses)';
+        receivedOrder = arrayfun(@(x) x.id, actualResponses)';
         switch instruction
             case {'G_GET_X','G_GET_Y','G_GET_A'}
-                unsorted = arrayfun(@(x) typecast(x.responseData,'single'),rResponses)';
+                unsorted = arrayfun(@(x) typecast(x.responseData,'single'),actualResponses)';
             case {'G_GET_T_L','G_GET_T_R'}
-                unsorted = arrayfun(@(x) typecast(x.responseData,'int16'),rResponses)';
+                unsorted = arrayfun(@(x) typecast(x.responseData,'int16'),actualResponses)';
             case {'G_GET_POS'}
                 % Do all the casts at once cuz why not
                 unsorted = arrayfun(@(x) [typecast(x.responseData(1:12),'single')...
                     single(typecast(x.responseData(13:16),'uint32'))],...
-                    rResponses,'UniformOutput',false);
+                    actualResponses,'UniformOutput',false);
                 % Output of the above line is cell array, so convert to
                 % matrix
                 unsorted = cell2mat(unsorted');
@@ -137,14 +155,14 @@ if ~isempty(rResponses)
             % For non-global instructions, rResponses should only have one
             % element. Should check to ensure there is only one...
             case {'GET_X','GET_Y','GET_A'}
-                response = typecast(rResponses.responseData,'single');
+                response = typecast(actualResponses.responseData,'single');
             case {'GET_T_L','GET_T_R'}
-                response = typecast(rResponses.responseData,'int16');
+                response = typecast(actualResponses.responseData,'int16');
             case 'GET_POS'
-                response(1) = typecast(rResponses.responseData(1:4),'single');
-                response(2) = typecast(rResponses.responseData(5:8),'single');
-                response(3) = typecast(rResponses.responseData(9:12),'single');
-                response(4) = typecast(rResponses.responseData(13:16),'uint32');
+                response(1) = typecast(actualResponses.responseData(1:4),'single');
+                response(2) = typecast(actualResponses.responseData(5:8),'single');
+                response(3) = typecast(actualResponses.responseData(9:12),'single');
+                response(4) = typecast(actualResponses.responseData(13:16),'uint32');
             % This is in case we don't know how to interpret the data for
             % some reason
             otherwise
@@ -152,161 +170,3 @@ if ~isempty(rResponses)
         end
     end
 end
-
-%% Old code
-% switch instruction
-%     case {'GO','STOP'}
-%         while true
-%             fwrite(config.xbee,B0);
-%             [~, count] = fread(config.xbee,1,'uint8');
-%             if count, break; end
-%         end
-%     case {'G_CONF','G_GO','G_RESET','G_STOP'}
-%         while true
-%             fwrite(config.xbee,B0);
-%             [~, count] = fread(config.xbee,tag,'uint8');
-%             if count==tag, break; end
-%         end
-%     % GET instructions
-%     case {'G_GET_X', 'G_GET_Y'}
-%         % Need to receive n 2-byte responses, decode the id, translate ids
-%         % to tags, lookup tags to indices in 'tag' vector, and return
-%         % values
-%         while true
-%             fwrite(config.xbee, B0);
-%             [rslt, count] = fread(config.xbee,[2 length(tag)],'uint8');
-%             if count==2*length(tag), break; end
-%         end
-%         response = zeros(length(tag),1);
-%         % transpose so each row of rslt is the 2 byte response of each bot
-%         rslt = uint16(rslt)';
-%         % Isolate leading 3 bits to get IDs
-%         allIds = bitshift(bitand(rslt(:,1),224),-5);
-%         for i = 1:length(tag)
-%             % Find the index in rslt corresponding to tag(i)
-%             index = find(config.tagIdStruct.(tag(i))==allIds);
-%             % Piece the two bytes together
-%             response(i) = bitor(bitshift(rslt(index,1),8),rslt(index,2));
-%             % If number is negative (i.e. 13th bit = 1)
-%             if bitand(response(i),4096)
-%                 % Reverse 2's complement, mask the leading 3 ID bits
-%                 % Then divide by 100, and negate result
-%                 response(i) = -double(bitand(bitcmp(int16(response(i)-1)),8191))/100;
-%             else
-%                 % If positive, just mask the leading 3 ID bits and divide
-%                 response(i) = bitand(response(i),8191)/100;
-%             end
-%         end
-%     case 'G_GET_A'
-%         while true
-%             fwrite(config.xbee, B0);
-%             [rslt, count] = fread(config.xbee,[2 length(tag)],'uint8');
-%             if count==2*length(tag), break; end
-%         end
-%         response = zeros(length(tag),1);
-%         % transpose so each row of rslt is the 2 byte response of each bot
-%         rslt = rslt';
-%         % Isolate leading 3 bits to get IDs
-%         allIds = bitshift(bitand(rslt(:,1),224),-5);
-%         for i = 1:length(tag)
-%             % Find the index in rslt corresponding to tag(i)
-%             index = find(config.tagIdStruct.(tag(i))==allIds);
-%             % Piece the two bytes together, masking ID bits, and convert to
-%             % radians
-%             response(i) = bitor(bitshift(bitand(rslt(index,1),31),8),...
-%                 rslt(index,2))*pi/180;
-%         end
-%         disp(response*180/pi);
-%     case {'GET_T_L','GET_T_R','GET_B'}
-%         while true
-%             fwrite(config.xbee,B0);
-%             [rslt,count] = fread(config.xbee,2,'uint8');
-%             if count==2, break; end
-%         end
-%         response = bitor(bitshift(bitand(rslt(1),31),8),rslt(2));
-%     case 'GET_A'
-%         while true
-%             fwrite(config.xbee,B0);
-%             % rslt is data received, count is # of uint8's in rslt
-%             [rslt, count] = fread(config.xbee,2,'uint8');
-%             if count==2, break; end
-%         end
-%         % Convert angle to radians
-%         response = bitor(bitshift(bitand(rslt(1),31),8),rslt(2))*pi/180;
-%     case {'GET_X','GET_Y'}
-%         while true
-%             fwrite(config.xbee,B0);
-%             [rslt, count] = fread(config.xbee,2,'uint8');
-%             if count==2, break; end
-%         end
-%         % Convert back to decimal
-%         response = bitor(bitshift(bitand(rslt(1),31),8),rslt(2))/100;
-%     % SET instructions
-%     case {'SET_X','SET_Y'}
-%         % Keep 2 decimals, truncate remainder
-%         data = uint16(data*100);
-%         % Put most significant bit in B0
-%         B0 = bitor(B0, uint8(bitshift(data,-8)));
-%         % B1 is the least significant 8 bits
-%         B1 = bitand(data,255);
-%         while true
-%             fwrite(config.xbee, B0);
-%             fwrite(config.xbee, B1);
-%             [~, count] = fread(config.xbee, 1, 'uint8');
-%             if count, break; end
-%         end
-%     case 'SET_H'
-%         data = uint16(data);
-%         % Put most significant bit in B0
-%         B0 = bitor(B0, uint8(bitshift(data,-8)));
-%         % B1 is the least significant 8 bits
-%         B1 = bitand(data,255);
-%         while true
-%             fwrite(config.xbee, B0);
-%             fwrite(config.xbee, B1);
-%             [~,count] = fread(config.xbee, 1, 'uint8');
-%             if count, break; end
-%         end
-%     case {'SET_M_L','SET_M_R'}
-%         % Most significant bit indicates sign of value
-%         if data<0
-%             B0 = bitor(B0, 1);
-%         end
-%         % B1 is the magnitude of the data, should be less or equal to 255
-%         B1 = uint8(abs(data));
-%         while true
-%             fwrite(config.xbee, B0);
-%             fwrite(config.xbee, B1);
-%             [~,count] = fread(config.xbee, 1, 'uint8');
-%             if count, break; end
-%         end
-%     case 'GO_F'
-%         % Divide data by 10 to get centiseconds
-%         data = round(data/10);
-%         % Put most significant bit in B0
-%         B0 = bitor(B0, uint8(bitshift(data,-8)));
-%         % B1 is the least significant 8 bits
-%         B1 = bitand(data,255);
-%         while true
-%             fwrite(config.xbee, B0);
-%             fwrite(config.xbee, B1);
-%             [~, count] = fread(config.xbee, 1, 'uint8');
-%             if count, break; end
-%         end
-%     % Global with data
-%     case 'G_GO_F'
-%         % Divide data by 10 to get centiseconds
-%         data = round(data/10);
-%         % Put most significant bit in B0
-%         B0 = bitor(B0, uint8(bitshift(data,-8)));
-%         % B1 is the least significant 8 bits
-%         B1 = bitand(data,255);
-%         while true
-%             fwrite(config.xbee, B0);
-%             fwrite(config.xbee, B1);
-%             [~, count] = fread(config.xbee, tag, 'uint8');
-%             if count, break; end
-%         end
-% end
-% 
-% fclose(config.xbee);

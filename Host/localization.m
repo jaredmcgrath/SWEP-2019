@@ -1,4 +1,4 @@
-function [position] = localization(config,rssi,position)
+function [position] = localization(config,rssi)
 %% localization
 %   This function takes the received RSSI values and converts the values
 %   into distances. These distances are then used in the min-max
@@ -12,8 +12,6 @@ function [position] = localization(config,rssi,position)
 %   rssi
 %     m x n matrix where m denotes the number of robots and n denotes the 
 %     number of beacons
-%   position
-%     m x 2 position vector of robots before localization
 %
 % Returns:
 %   position

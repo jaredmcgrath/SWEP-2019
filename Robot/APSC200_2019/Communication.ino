@@ -42,30 +42,33 @@ void handleRx16() {
   // Get RSSI (not needed though)
   uint8_t rssi = rx16.getRssi();
   
-  #if DEBUG
-//  Serial.print(F("Error: ")); Serial.println(rx16.getErrorCode());
-//  Serial.print(F("API ID: ")); Serial.println(rx16.getApiId(),HEX);
-//  Serial.print(F("MSB Length: ")); Serial.println(rx16.getMsbLength(),HEX);
-//  Serial.print(F("LSB Length: ")); Serial.println(rx16.getLsbLength(),HEX);
-//  Serial.print(F("Checksum: ")); Serial.println(rx16.getChecksum(),HEX);
-//  Serial.print(F("Frame data length: ")); Serial.println(rx16.getFrameDataLength(),HEX);
-//  Serial.print(F("Packet Length: ")); Serial.println(rx16.getPacketLength(), HEX);
-//
-//  Serial.println("Data:");
-//  for (int i = 0; i < dataLength; i++) {
-//    for (byte mask = 0x80; mask; mask >>= 1) {
-//      if (mask & *(data+i))
-//        Serial.print(1);
-//      else
-//        Serial.print(0);
-//    }
-//    Serial.print(" ");
-//  }
-//  for (int i = 0; i < dataLength; i++) {
-//    Serial.print(*(data+i),HEX); Serial.print(" ");
-//  }
-//  Serial.println();
+  #if DEBUG > 0
   Serial.println(F("Rx16 Received"));
+  #endif
+
+  #if DBEUG > 2
+  Serial.print(F("Error: ")); Serial.println(rx16.getErrorCode());
+  Serial.print(F("API ID: ")); Serial.println(rx16.getApiId(),HEX);
+  Serial.print(F("MSB Length: ")); Serial.println(rx16.getMsbLength(),HEX);
+  Serial.print(F("LSB Length: ")); Serial.println(rx16.getLsbLength(),HEX);
+  Serial.print(F("Checksum: ")); Serial.println(rx16.getChecksum(),HEX);
+  Serial.print(F("Frame data length: ")); Serial.println(rx16.getFrameDataLength(),HEX);
+  Serial.print(F("Packet Length: ")); Serial.println(rx16.getPacketLength(), HEX);
+
+  Serial.println("Data:");
+  for (int i = 0; i < dataLength; i++) {
+    for (byte mask = 0x80; mask; mask >>= 1) {
+      if (mask & *(data+i))
+        Serial.print(1);
+      else
+        Serial.print(0);
+    }
+    Serial.print(" ");
+  }
+  for (int i = 0; i < dataLength; i++) {
+    Serial.print(*(data+i),HEX); Serial.print(" ");
+  }
+  Serial.println();
   #endif
   
   // Get the instruction
@@ -107,9 +110,6 @@ void sendTx16Request(uint8_t *payload, uint8_t payloadLength) {
 
 void executeInstruction(uint8_t instruction, uint8_t *data, uint8_t dataLength) {
   switch (instruction) {
-    case 0x00:
-      go();
-      break;
     case 0x01:
       getX();
       break;
@@ -129,7 +129,7 @@ void executeInstruction(uint8_t instruction, uint8_t *data, uint8_t dataLength) 
       getBattery();
       break;
     case 0x07:
-      dontGo();
+      done();
       break;
     case 0x08:
       getPos();
@@ -141,6 +141,20 @@ void executeInstruction(uint8_t instruction, uint8_t *data, uint8_t dataLength) 
     case 0x0A:
       nextBeacon();
       break;
+    case 0x0B:
+      if (dataLength == 8) {
+        setNextTarget(bytesToFloat(data,4), bytesToFloat(data+4, 4));
+      } else {
+        Serial.println(F("GET_NEXT failed!"));
+      }
+      break;
+    case 0x0C:
+      if (dataLength == 8) {
+        endLocalization(bytesToFloat(data,4), bytesToFloat(data+4, 4));
+      } else {
+        Serial.println(F("GET_NEXT failed!"));
+      }
+      break;
     // SET instructions
     case 0x80:
       setX(bytesToFloat(data, dataLength));
@@ -151,28 +165,19 @@ void executeInstruction(uint8_t instruction, uint8_t *data, uint8_t dataLength) 
     case 0x82:
       setAngle(bytesToFloat(data, dataLength));
       break;
-    case 0x83:
-      setLeftMotor(bytesToInt16(data, dataLength));
-      break;
-    case 0x84:
-      setRightMotor(bytesToInt16(data, dataLength));
-      break;
-    case 0x85:
-      goFixed(bytesToULong(data, dataLength));
-      break;
     case 0x86:
       if (dataLength == 12) {
         setPos(bytesToFloat(data, 4), bytesToFloat(data+4, 4), bytesToFloat(data+8, 4));
       }
       #if DEBUG
       else {
-        Serial.println("SET_POS failed!");
+        Serial.println(F("SET_POS failed!"));
       }
       #endif
       break;
     default:
       #if DEBUG
-        Serial.println("Bad instruction");
+        Serial.println(F("Bad instruction"));
       #endif
       break;
   }
@@ -224,17 +229,10 @@ unsigned long bytesToULong(uint8_t *data, uint8_t dataLength) {
  * Executable instructions
  */
 
-void go() {
-  driveArdumoto(MOTOR_L, leftInput);
-  driveArdumoto(MOTOR_R, rightInput);
-  #if DEBUG
-  Serial.print(F("Going with left motor at ")); Serial.print(leftInput); Serial.print(F(", right motor at ")); Serial.println(rightInput);
-  #endif
-}
-
-void dontGo() {
+void done() {
   driveArdumoto(MOTOR_L, 0);
   driveArdumoto(MOTOR_R, 0);
+  hasTarget = false;
   #if DEBUG
   Serial.println(F("Stopped"));
   #endif
@@ -391,33 +389,6 @@ void setAngle(float angle) {
   #endif
 }
 
-void setLeftMotor(int16_t value) {
-  leftInput = value;
-  #if DEBUG
-  Serial.print(F("Left motor set to: ")); Serial.println(leftInput);
-  #endif
-}
-
-void setRightMotor(int16_t value) {
-  rightInput = value;
-  #if DEBUG
-  Serial.print(F("Right motor set to: ")); Serial.println(rightInput);
-  #endif
-}
-
-void goFixed(unsigned long duration) {
-  // Drive the motors
-  driveArdumoto(MOTOR_L, leftInput);
-  driveArdumoto(MOTOR_R, rightInput);
-  // Calculate endtime
-  endTime = millis() + duration;
-  // Set to true to indicate it needs to be stopped in future
-  isMovingFixed = true;
-  #if DEBUG
-  Serial.print(F("Moving for: ")); Serial.print(duration); Serial.println(F(" milliseconds"));
-  #endif
-}
-
 void setPos(float x, float y, float angle) {
   xPosition = x;
   yPosition = y;
@@ -457,4 +428,32 @@ void nextBeacon() {
     // Send the response with all the RSSI values
     sendTx16Request(payload, numBeacons+1);
   }
+}
+
+// Request to perform the localization procedure
+void startLocalization() {
+  doneLocalizing = false;
+  uint8_t payload[1];
+  payload[0] = 0x0C;
+  sendTx16Request(payload, 1);
+}
+
+void endLocalization(float x, float y) {
+  doneLocalizing = true;
+  localX = x;
+  localY = y;
+}
+
+// Create and send the request to get the next point
+void getNextTarget() {
+  uint8_t payload[1];
+  payload[0] = 0x0B;
+  sendTx16Request(payload, 1);
+}
+
+// Take the parsed response and set respective target variables
+void setNextTarget(float x, float y) {
+  xTarget = x;
+  yTarget = y;
+  hasTarget = true;
 }

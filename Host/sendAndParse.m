@@ -5,7 +5,7 @@ function response = sendAndParse(serialPort, request, isOpen, shouldClose)
 %
 % Parameters:
 %   serialPort
-%     A closed serial port instance, connected to an XBee in API = 2 mode
+%     A serial port instance, connected to an XBee in API = 2 mode
 %   request
 %     An XBeeRequest object to be transmitted
 %   isOpen
@@ -26,8 +26,6 @@ end
 fwrite(serialPort, request.toSendFormat(), 'uint8');
 pause(0.1);
 
-% TODO: Test this section to ensure closing the serial port doesn't mess up
-% the reading in parse()
 response = parse(serialPort);
 
 % Close the serial port

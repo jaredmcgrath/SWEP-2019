@@ -1,4 +1,4 @@
-function rssi = getRssi(config, tag)
+function [rssi, overlapResponses] = getRssi(config, tag)
 %% getRssi
 % Gets the RSSI values from robots
 %
@@ -17,39 +17,62 @@ function rssi = getRssi(config, tag)
 %     Charactor vector of m bot tags
 %
 % Returns
-%   m-by-n int8 array of RSSI values, where each row is the RSSI for a
-%   given bot, and each column corresponds to one becon
+%   rssi
+%     m-by-n int8 array of RSSI values, where each row is the RSSI for a
+%     given bot, and each column corresponds to one becon
+%   overlapResponses
+%     Array of XBeeResponse objects that were received during this
+%     instruction, but should be handled as independent requests by the
+%     calling function
 
 % TODO: Test this function to ensure it works
-
+overlapResponses = XBeeResponse.empty;
 
 % Construct the initialization request
 msg = uint8([config.insStruct.G_GET_RSSI length(config.beacons)]);
-address = XBeeConst.BROADCAST_ADDRESS;
+% If only doing localization on one bot
+if length(tag) == 1
+    address = config.tagAddressStruct(tag);
+else
+    address = XBeeConst.BROADCAST_ADDRESS;
+end
 request = Tx16Request(address, msg, 1);
 
-fopen(config.beacons(1));
+% TODO: Does this need to be open?
+% fopen(config.beacons(1));
 
 % Send initialization request
+% Overlap responses could be generated here
 initialResponse = sendAndParse(config.beacons(1), request, true, false);
+% Check for overlap
+for i = 1:length(initialResponse)
+    if initialResponse(i).apiId == XBeeConst.RX_16_RESPONSE
+        % The initial response should not include anything related to
+        % the localization, so any RobotResponses must be overlap
+        overlapResponses = [overlapResponses initialResponse(i)];
+    end
+end
 
 % Construct generic packet to be sent by each beacon, with dummy ID 0
-pingRequest = Tx16Request(XBeeConst.BROADCAST_ADDRESS, ...
-    [config.insStruct.PING 0], 1);
+pingRequest = Tx16Request(address, [config.insStruct.PING 0], 1);
 % Empty response array
 response = XBeeResponse.empty;
 for i = 2:length(config.beacons)
     % Replace beacon ID in the ping request
     pingRequest.payload(2) = i;
     % Send the request using the specified beacon
-    response(end+1) = sendAndParse(config.beacons(i), pingRequest);
+    response(end+1) = sendAndParse(config.beacons(i), pingRequest, false, true);
 end
 
 % We now expect a response from each robot, sent to the original XBee. 
 % However, this should be automatic, so we only call parse()
+% Overlap Responses could be generated here
 rssiResponse = parse(config.beacons(1));
+
+% TODO: Does this need to be closed?
 % We can now close the original XBee
-fclose(config.beacons(1));
+% fclose(config.beacons(1));
+
 % Empty arrays
 txResponses = TxStatusResponse.empty;
 rResponses = RobotResponse.empty;
@@ -79,8 +102,11 @@ for i = 1:length(rssiResponse)
                 valid = false;
                 break
             end
+            
             if rResponse.instruction == 9
                 rResponses(end+1) = rResponse;
+            else
+                overlapResponses = [overlapResponses rssiResponse(i)];
             end
         otherwise
             warning("Weird response received, ignoring");

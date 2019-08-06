@@ -9,7 +9,6 @@
 
 /////////////////////////////// Program Execution Options ///////////////////////////////////////////////
 #define DEBUG 0
-#define PRINT_RESULTS 1
 #define DEST_ADDRESS 0xBEEF
 
 /////////////////////////////// Define all needed pins ///////////////////////////////////////////////
@@ -80,11 +79,11 @@ float theta = 0; // Stores the current angle of the robot, from the gyro
 ////////////////////////////// Localization (with XBees) ////////////////////////////////////////
 uint8_t rssiValues[32];
 uint8_t numBeacons = 0, beacon = 0;
+float localX, localY;
 
 ////////////////////////////// PID CONTROL ALGORITHM ////////////////////////////////////////////
 #define DIVIDER 2                               // Reduces output from controller to level that can be used in motor inputs
-float xTarget[] = {2,2,0,0}, yTarget[] = {0,2,2,0};                 // The current target point the robot is trying to reach
-int counter = 0;
+float xTarget, yTarget;                 // The current target point the robot is trying to reach
 float headingDesired, headingActual;            // Heading angle from current position to target position (the set point, and actual heading of robot
 float headingError, headingErrorPrevious = 0;   // Differnece between current heading and desired heading 
 float headingErrorCum, headingErrorRate;        // Values cumulative and rate of change for heading error. Used in PID calc
@@ -92,28 +91,16 @@ float kP = 150, kI = 0, kD = 0;                  // PID gains, Proportional, Int
 unsigned long currentTime, previousTime = 900;  // Variables used to help calcualte elapsed time
 float elapsedTime;                              // Used to determine the cumulative and rate of change for heading error
 float output;                                   // Result from PID controller
-int leftMotorInput, rightMotorInput;            // Right and left motor inputs
+int leftInput = 0, rightInput = 0; // A variable to convert the wheel speeds
 
 ///////////////////////////// HIT TARGET ///////////////////////////////////////////////////////
 #define TARGET_THRESHOLD 0.05F 
 float dist = 0;
-
-
-/////////////////////////////// Other Variables /////////////////////////////////////////////////
-int leftInput = 0, rightInput = 0; // A variable to convert the wheel speeds from char (accepted), to int
-
-// Interruptible movement variables
-// If Arduino is moving for a fixed duration
-bool isMovingFixed = false;
-// Clock value to stop movement at
-unsigned long endTime;
+// Indicates if the bot has a target point to navigate to
+bool hasTarget = false;
+bool doneLocalizing = true;
 
 /////////////////////////////// Agent Tag Data - CHANGE FOR EACH ROBOT ///////////////////////////////////////////////
-/*
- * ID's should be numbered 0-6 inclusively
- */
-byte message[2];
-#define ALL_AGENTS 7
 #define ID 0
 byte id = ID;
 
@@ -121,17 +108,17 @@ byte id = ID;
 Adafruit_LSM9DS0 lsm = Adafruit_LSM9DS0(); //An object for the sensor module, to be accessed to get the data
 SoftwareSerial xbeeSerial(4,5);
 XBee xbee = XBee();
+
 // Tx/Rx Objects. Decalred once and reused to conserve space
 Tx16Request tx = Tx16Request(DEST_ADDRESS, NULL, 0);
 TxStatusResponse txStatus = TxStatusResponse();
-// Generic response, before cast to specific response type
 XBeeResponse response = XBeeResponse();
 Rx16Response rx16 = Rx16Response();
 
 //////////////////////////////// Setup ////////////////////////////////////////////////////////////
 
 void setup(){
-  #if DEBUG || PRINT_RESULTS
+  #if DEBUG > 0
   Serial.begin(9600);
   #endif
 
@@ -146,7 +133,7 @@ void setup(){
   
   botSetup(); // Set's up Bot configuration
 
-  #if DEBUG
+  #if DEBUG > 0
   Serial.println(F("\n\nRobot setup complete, beginning main loop\n\n"));
   #endif
 }
@@ -159,15 +146,13 @@ void loop() {
 //////////////////////////////// Functions /////////////////////////////////////////////////////////
 
 void botSetup(){
-  #if DEBUG
+  #if DEBUG > 0
   Serial.println(F("botSetup started"));
   #endif
   
   #ifndef ESP8266         // from sensor module example code, don't know if we need this 
     while (!Serial);     // will pause Zero, Leonardo, etc until serial console opens
   #endif
-
-  // Initialize serial port via XBee
   
   // Ensure sensor module is intact
   if(!lsm.begin()) {
@@ -176,7 +161,10 @@ void botSetup(){
   }
 
   // Setup routines
-  displaySensorDetails(); //Shows the details about the sensor module, could be removed or put in an if(DEBUG) statement
+  #if DEBUG > 0
+    displaySensorDetails(); //Shows the details about the sensor module
+  #endif
+  
   configureSensor(); //Configures the sensitivity of the sensor module
   setupArdumoto(); //Sets up the ardumoto shield for the robot's motors
 
@@ -187,8 +175,11 @@ void botSetup(){
   digitalWrite(ENCODER_R, HIGH);
   attachInterrupt(digitalPinToInterrupt(ENCODER_L), leftEncoderTicks, RISING); //assign the interrupt service routines to the pins
   attachInterrupt(digitalPinToInterrupt(ENCODER_R), rightEncoderTicks, RISING); //This is done on the Uno's interrupts pins so this syntax is valid, else use the PCI syntax 
+
+  // Ask for a target point
+  getNextTarget();
   
-  #if DEBUG
+  #if DEBUG > 0
   Serial.println(F("botSetup completed"));
   #endif
 }
@@ -196,30 +187,24 @@ void botSetup(){
 //The main loop of the robot, could be moved fully to the loop function if desired, on every iteration, x, y, theta are all
 //updated by the encoders and the gyro then the Xbee is checked to see if it has any intruction from MATLAB, then the appropriate
 //action is performed
-void botLoop(){
+void botLoop() {
   // Update bot position using encoders/dead reckoning
   positionCalc();
   // Calculates heading using the gyroscope
   calcGyroAngle();
-  // control process, if statement used as a delay between running control and hit target functions
-  if(millis() - currentTime > 100){
-    //controlProcess();
+  // control process
+  if (hasTarget && millis() - currentTime > 100){
+    controlProcess();
     
-    #if PRINT_RESULTS
+    #if DEBUG > 1
     printResults();
     #endif
 
-    //hitTarget();
+    hitTarget();
   }
-  // Print results from positionCalc, calcGyroAngle and controlProcess for each iteration of the main runtime loop
-  #if PRINT_RESULTS
-  printResults();
-  #endif
   
   // Check for any instructions
   checkForIns();
-  // Check if movement should be interrupted
-  interruptMovement();
 }
 
 // This function controls the motion of the robot such that it reaches its destination target
@@ -229,7 +214,7 @@ void controlProcess(){
   elapsedTime = (float) currentTime - previousTime;
 
   // Calculate how 'off' the robot's heading is
-  headingDesired = atan2((yTarget[counter]-yPosition),(xTarget[counter]-xPosition));
+  headingDesired = atan2((yTarget-yPosition),(xTarget-xPosition));
 
   // Adjust headingActual to be within bounds of -PI to PI.
   headingActual = gyroAngleCorrected;
@@ -260,37 +245,59 @@ void controlProcess(){
   previousTime = currentTime;
 
   // Calculates the wheel inputs using the control output
-  leftMotorInput = 120 - output/DIVIDER;
-  rightMotorInput = 120 + output/DIVIDER;
+  leftInput = 120 - output/DIVIDER;
+  rightInput = 120 + output/DIVIDER;
 
   // Ensures wheels still rotate and dont slip.
-  if (leftMotorInput < 80){
-    leftMotorInput = 80;
+  if (leftInput < 80){
+    leftInput = 80;
   }
-  else if (leftMotorInput > 255){
-    leftMotorInput = 255;
+  else if (leftInput > 255){
+    leftInput = 255;
   }
-  if (rightMotorInput < 80){
-    rightMotorInput = 80;
+  if (rightInput < 80){
+    rightInput = 80;
   }
-  else if (rightMotorInput > 255){
-    rightMotorInput = 255;
+  else if (rightInput > 255){
+    rightInput = 255;
   }
   
   // Sending the motor inputs to their respective motor
-  driveArdumoto(MOTOR_L, leftMotorInput);
-  driveArdumoto(MOTOR_R, rightMotorInput);
+  driveArdumoto(MOTOR_L, leftInput);
+  driveArdumoto(MOTOR_R, rightInput);
 
 }
 
 void hitTarget(){
-  dist = sqrt(pow((yTarget[counter]-yPosition),2)+pow((xTarget[counter]-xPosition),2));
+  dist = sqrt(pow((yTarget-yPosition),2)+pow((xTarget-xPosition),2));
   
   if (dist < TARGET_THRESHOLD){
-    counter ++;
+    // Stop robot
+    done();
+    // Perform localization to check if the bot's actual position is at the target
+    startLocalization();
+    while (!doneLocalizing) {
+      checkForIns();
+    }
+    #if DEBUG > 0
+    Serial.print("Localized X: "); Serial.println(localX);
+    Serial.print("Localized Y: "); Serial.println(localY);
+    #endif
     
-    // ask for next target coordinates from the Host computer
-    // Need to create XBee transmission commands to ask for this information
+    // Update position with localized position. Comment out while testing
+//    xPosition = localX;
+//    yPosition = localY;
+
+    // Recalculate distance
+    dist = sqrt(pow((yTarget-yPosition),2)+pow((xTarget-xPosition),2));
+
+    // If so, request the next point from host.
+    // Otherwise, update the bot's local position with the localized position and continue navigating
+    if (dist < TARGET_THRESHOLD) {
+      getNextTarget();
+    } else {
+      hasTarget = true;
+    }
   }
 }
 
@@ -299,9 +306,9 @@ void printResults(){
   Serial.print(",");
   Serial.print(yPosition);
   Serial.print(",");
-  Serial.print(xTarget[counter]);
+  Serial.print(xTarget);
   Serial.print(",");
-  Serial.print(yTarget[counter]);
+  Serial.print(yTarget);
   Serial.print(",");
   Serial.print(headingDesired);
   Serial.print(",");

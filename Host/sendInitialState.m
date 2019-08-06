@@ -1,4 +1,4 @@
-function sendInitialState(config, positions, tags, theta)
+function overlapResponses = sendInitialState(config, positions, tags, theta)
 %% sendInitialState
 % Takes the initial position info for each bot and an XBee serial port
 % object and sends the info
@@ -16,8 +16,14 @@ function sendInitialState(config, positions, tags, theta)
 %     The heading of the positive x-axis in degrees
 %
 % Returns:
-%   N/A
+%   overlapResponses
+%     Array of XBeeResponse objects that were received during this
+%     instruction, but should be handled as independent requests by the
+%     calling function
 
+overlapResponses = XBeeResponse.empty;
 for i = 1:length(tags)
-    sendInstruction(config, 'SET_POS', tags(i), [positions(i,:) theta(i)]);
+    [~, overlap] = sendInstruction(config, 'SET_POS', tags(i),...
+        [positions(i,:) theta(i)]);
+    overlapResponses = [overlapResponses overlap];
 end
