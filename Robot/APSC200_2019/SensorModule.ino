@@ -80,7 +80,7 @@ void calcGyroAngle()
   gyroAngleRaw = gyroAngleRaw + (float)((gyroTime - gyroTimePrevious)/1000)*gyroGain;
   
   // Calcualte the corrected gyro angle [radians] using the previous raw angle measurement (which is in degrees) 
-  gyroAngleCorrected = (gyroAngleRaw - (GYRO_CORRECTION_SLOPE * gyroTime - GYRO_CORRECTION_INTERCEPT))*PI/180;
+  gyroAngleCorrected = (gyroAngleRaw - (GYRO_CORRECTION_SLOPE * gyroTime + GYRO_CORRECTION_INTERCEPT))*PI/180;
   
   // Set of conditionals to keep the corrected heading angle within 0 to 2*PI.
   if (gyroAngleCorrected > 2*PI)
@@ -94,7 +94,7 @@ void calcGyroAngle()
   // Stores the time of the current measurement in a variable to be called for in the next iteration of the function
   gyroTimePrevious = gyroTime;
 
-  #if DEBUG > 0
+  #if DEBUG > 2
   Serial.print(gyroTime);
   Serial.print(",");
   Serial.print(gyroGain);

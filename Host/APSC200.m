@@ -1,14 +1,14 @@
 %% APSC 200: Main Robot Script
 % This is the main program for running the robots in the desired group
 % dynamics. This script is designed to work with the robots performing PID
-% control. 
+% control, in sync with each other. 
 % Key differences: 
 % - Localization is to happen when a bot reaches a target point
 % - Each bot is able to request its next target point
 % - The host program serves as the hub to coordinate localization, and to
 %   ensure bots are syncronized
 %    - Host program synchronizes by waiting for all bots to request their
-%    next target point before sending the next target points
+%      next target point before sending the next target points
 % - This script does NOT do any calibration of the bots' wheels. This is
 %   only needed for the LQR controller
 
@@ -52,11 +52,12 @@ path = pathFile.agentPositionHistory(:,1:2*length(tags));
 %% MAIN LOOP
 % High-level overview of what should happen
 % - Parse any packets received and respond appropriately
-% - If the program is done navigating, tell bots to stop
 % - While all of this is happening, need to alays check for simultaneous
 %   requests from robots, store them, and deal with them appropriately
+%   - request is a buffer for all requests that have accumulated
+%   - handleRequest handles all the requests, and resets the buffer
 
-% TODO: Debug this and figure out why nothing happens
+% TODO: If the program is done navigating, tell bots to stop
 
 % pathIndex keeps track of where we are in the navigation path
 pathIndex = 1;
@@ -64,6 +65,8 @@ pathIndex = 1;
 nextPosTags = '';
 while pathIndex <= size(path,1)
     if config.beacons(1).BytesAvailable > 0
+        % Pause to ensure the entire request is received
+        pause(0.05);
         % Parse any requests from bots
         request = [request parse(config.beacons(1))];
     end
@@ -79,7 +82,9 @@ while pathIndex <= size(path,1)
                 path(pathIndex, 2*i-1:2*i));
             request = [request overlap];
         end
+        % Increment path index
         pathIndex = pathIndex + 1;
+        % Empty the tags
+        nextPosTags = '';
     end
 end
-sendInstruction(config, 'G_STOP');

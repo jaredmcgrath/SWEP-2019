@@ -9,15 +9,11 @@ function [response, overlapResponses] = sendInstruction(config, ...
 %   instruction
 %     String instruction. Must match one of the instructions in insStruct
 %   tag (optional)
-%     If the instruction is specific to a bot, botTag should be the single
+%     If the instruction is specific to a bot, tag should be the single
 %     character tag of that bot. 
-%     NOTE: If the instruction is 'G_CONF', this should be the number of
-%     bots that need to be confirmed
 %   data (optional)
 %     If the instruction transmits data (i.e. any SET instruction), the
-%     value should be in data. All data should be passed in as regular
-%     values (e.g. an x position as 1.23, not 123) EXCEPT for the heading,
-%     which should be specified in degrees, not radians
+%     value should be in data. 
 %
 % Returns:
 %   response (optional)
@@ -60,7 +56,7 @@ switch instruction
     % Sending 3 float32 data
     case 'SET_POS'
         msg(2:13) = typecast(single(data),'uint8');
-    case 'START_LOCAL'
+    case {'GET_NEXT','START_LOCAL'}
         msg(2:9) = typecast(single(data),'uint8');
 end
 
@@ -165,6 +161,9 @@ if ~isempty(actualResponses)
                 response(4) = typecast(actualResponses.responseData(13:16),'uint32');
             % This is in case we don't know how to interpret the data for
             % some reason
+            % TODO: START_LOCAL seems to be getting through here.
+            % Localization commands like START_LOCAL should not show up
+            % here, rather should be contained within getRssi()
             otherwise
                 warning(['Instruction not yet implemented: ' instruction]);
         end

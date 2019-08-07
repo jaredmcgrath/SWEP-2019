@@ -18,11 +18,8 @@ function [nextPosTags, overlapResponses] = handleRequest(config, request)
 %     instruction, but should be handled as independent requests by the
 %     calling function
 
-% TODO: Because of the asynchrous nature of this function, need to make
-% sure no requests are lost/overwritten during any function calls.
-% This is really only a concern with localization; if Bot A is in the
-% middle of localization and Bot B sends a request to the host, it could be
-% lost in getRssi or sendInstruction
+% TODO: Some requests seem to slip through during the RSSI procedure. Find
+% out why this happens
 
 nextPosTags = '';
 
@@ -63,7 +60,8 @@ for i = 1:length(rResponses)
         % 15 = START_LOCAL
         case 12
             % Get RSSI values from multiple beacon pings
-            [rssi, overlapResponses] = getRssi(config, tag);
+            [rssi, overlap] = getRssi(config, tag);
+            overlapResponses = [overlapResponses overlap];
             % Calculate new position from RSSI values
             newPos = localization(config, rssi);
             % Send the new position back to bots to complete localization

@@ -5,10 +5,11 @@ function [rssi, overlapResponses] = getRssi(config, tag)
 % Sequence of beacons is in the order of the config.xml file. See
 % parseConfig() for more info on how serial ports should be formatted.
 % tags is supplied to ensure the correct ordering of responses.
-% Primary beacon (config.xbee) sends G_GET_RSSI to bots. Bots should halt
-% and wait for n - 1 beacons to send requests, from which the bots record
-% the RSSI values. After the final beacon ping, the bots each send a 
-% response to the primary beacon with RSSI values.
+% Primary beacon (config.beacons(1)) sends G_GET_RSSI to bots. Bots should 
+% halt and wait for n - 1 beacons to send requests, from which the bots 
+% record the RSSI values. After the final beacon ping, the bots each send a 
+% response to the primary beacon with RSSI values. Note that the primary
+% beacon needs to be open during this process.
 %
 % Parameters:
 %   config
@@ -25,21 +26,17 @@ function [rssi, overlapResponses] = getRssi(config, tag)
 %     instruction, but should be handled as independent requests by the
 %     calling function
 
-% TODO: Test this function to ensure it works
 overlapResponses = XBeeResponse.empty;
 
 % Construct the initialization request
 msg = uint8([config.insStruct.G_GET_RSSI length(config.beacons)]);
 % If only doing localization on one bot
 if length(tag) == 1
-    address = config.tagAddressStruct(tag);
+    address = config.tagAddressStruct.(tag);
 else
     address = XBeeConst.BROADCAST_ADDRESS;
 end
 request = Tx16Request(address, msg, 1);
-
-% TODO: Does this need to be open?
-% fopen(config.beacons(1));
 
 % Send initialization request
 % Overlap responses could be generated here
@@ -67,11 +64,8 @@ end
 % We now expect a response from each robot, sent to the original XBee. 
 % However, this should be automatic, so we only call parse()
 % Overlap Responses could be generated here
+pause(0.1);
 rssiResponse = parse(config.beacons(1));
-
-% TODO: Does this need to be closed?
-% We can now close the original XBee
-% fclose(config.beacons(1));
 
 % Empty arrays
 txResponses = TxStatusResponse.empty;

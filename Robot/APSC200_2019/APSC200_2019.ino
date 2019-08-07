@@ -11,6 +11,10 @@
 #define DEBUG 0
 #define DEST_ADDRESS 0xBEEF
 
+/////////////////////////////// Bot ID constants - CHANGE FOR EACH ///////////////////////////////////////////////
+#define ID 0
+int id = ID;
+
 /////////////////////////////// Define all needed pins ///////////////////////////////////////////////
 #define MOTOR_R 0 // right motor (A)
 #define MOTOR_L 1 // left motor (B)
@@ -50,8 +54,16 @@ typedef union {
 } ByteArray16;
 
 /////////////////////////////// Gyro Constants & Variables /////////////////////////////////////////////////
+#if ID == 0 // Shannon
 #define GYRO_CORRECTION_SLOPE 0.000808367F  // slope for the correction line for the gyro readings
-#define GYRO_CORRECTION_INTERCEPT -0.921095F    // intercept for the correction line for the gyro readings
+#define GYRO_CORRECTION_INTERCEPT 0.921095F    // intercept for the correction line for the gyro readings
+#elif ID == 1 // Euler
+#define GYRO_CORRECTION_SLOPE -0.00645618F  // slope for the correction line for the gyro readings
+#define GYRO_CORRECTION_INTERCEPT -1.36407F    // intercept for the correction line for the gyro readings
+#elif ID == 2 // Laplace
+#define GYRO_CORRECTION_SLOPE -0.0152088F  // slope for the correction line for the gyro readings
+#define GYRO_CORRECTION_INTERCEPT 2.35949F    // intercept for the correction line for the gyro readings
+#endif
 float gyroTime;                             // time when gyro measurement taken
 float gyroTimePrevious = 800;     // stores the time when the previous gyro measurment was taken !!!NEEDS TO BE INCLUDED IN STARTUP SEQUENCE!!!
 float gyroGain;                   // stores the gain value returned by the gyro for the z-axis
@@ -61,8 +73,6 @@ float gyroAngleCorrected;         // stores the corrected angle of the robot, in
 /////////////////////////////// Sensor Variables ///////////////////////////////////////////////
 sensor_t accelSetup, magSetup, gyroSetup, tempSetup; //Variables used to setup the sensor module
 sensors_event_t accel, mag, gyro, temp; // Variables to store current sensor event data
-//float heading, baseline = 0; // Variables to store the calculated heading and the baseline variable (Baseline may be unnecessary)
-bool isThetaSet = false;
 
 /////////////////////////////// Encoder Variables ///////////////////////////////////////////////
 int oldLeftEncoder = 0, oldRightEncoder = 0; // Stores the encoder value from the loop prior to estimate x, y position
@@ -99,10 +109,6 @@ float dist = 0;
 // Indicates if the bot has a target point to navigate to
 bool hasTarget = false;
 bool doneLocalizing = true;
-
-/////////////////////////////// Agent Tag Data - CHANGE FOR EACH ROBOT ///////////////////////////////////////////////
-#define ID 0
-byte id = ID;
 
 ////////////////////////////////////////////////////////// Object Declarations //////////////////////////////////////////////////////////
 Adafruit_LSM9DS0 lsm = Adafruit_LSM9DS0(); //An object for the sensor module, to be accessed to get the data
@@ -188,12 +194,15 @@ void botSetup(){
 //updated by the encoders and the gyro then the Xbee is checked to see if it has any intruction from MATLAB, then the appropriate
 //action is performed
 void botLoop() {
-  // Update bot position using encoders/dead reckoning
-  positionCalc();
-  // Calculates heading using the gyroscope
-  calcGyroAngle();
+
   // control process
-  if (hasTarget && millis() - currentTime > 100){
+  // TODO: Figure out optimal delay for positionCalc(), calcGyroAngle(), and controlProcess()
+  // Currently, all happen once every 100ms
+  if (hasTarget && (millis() - previousTime) > 100){
+      // Update bot position using encoders/dead reckoning
+    positionCalc();
+    // Calculates heading using the gyroscope
+    calcGyroAngle();
     controlProcess();
     
     #if DEBUG > 1
@@ -274,22 +283,24 @@ void hitTarget(){
   if (dist < TARGET_THRESHOLD){
     // Stop robot
     done();
-    // Perform localization to check if the bot's actual position is at the target
-    startLocalization();
-    while (!doneLocalizing) {
-      checkForIns();
-    }
-    #if DEBUG > 0
-    Serial.print("Localized X: "); Serial.println(localX);
-    Serial.print("Localized Y: "); Serial.println(localY);
-    #endif
     
-    // Update position with localized position. Comment out while testing
-//    xPosition = localX;
-//    yPosition = localY;
-
-    // Recalculate distance
-    dist = sqrt(pow((yTarget-yPosition),2)+pow((xTarget-xPosition),2));
+    // Perform localization to check if the bot's actual position is at the target
+    // This is commented out as XBee localization sucks, so we just skip it and go to the next point
+//    startLocalization();
+//    while (!doneLocalizing) {
+//      checkForIns();
+//    }
+//    #if DEBUG > 0
+//    Serial.print("Localized X: "); Serial.println(localX);
+//    Serial.print("Localized Y: "); Serial.println(localY);
+//    #endif
+//    
+//    // Update position with localized position. Comment out while testing
+////    xPosition = localX;
+////    yPosition = localY;
+//
+//    // Recalculate distance
+//    dist = sqrt(pow((yTarget-yPosition),2)+pow((xTarget-xPosition),2));
 
     // If so, request the next point from host.
     // Otherwise, update the bot's local position with the localized position and continue navigating

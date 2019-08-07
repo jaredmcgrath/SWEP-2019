@@ -83,7 +83,7 @@ void handleRx16() {
 }
 
 void handleStatusResponse() {
-  #if DEBUG
+  #if DEBUG > 0
   if (txStatus.getStatus() == SUCCESS) {
     Serial.println(F("Successful tx"));
   } else {
@@ -93,14 +93,14 @@ void handleStatusResponse() {
 }
 
 void handleError(uint8_t error) {
-  #if DEBUG
+  #if DEBUG > 0
   Serial.print(F("Received XBee Error! Code: "));
   Serial.println(error, HEX);
   #endif
 }
 
 void sendTx16Request(uint8_t *payload, uint8_t payloadLength) {
-  #if DEBUG
+  #if DEBUG > 0
   Serial.println(F("Sending Tx16"));
   #endif
   tx = Tx16Request(DEST_ADDRESS, payload, payloadLength);
@@ -152,7 +152,7 @@ void executeInstruction(uint8_t instruction, uint8_t *data, uint8_t dataLength) 
       if (dataLength == 8) {
         endLocalization(bytesToFloat(data,4), bytesToFloat(data+4, 4));
       } else {
-        Serial.println(F("GET_NEXT failed!"));
+        Serial.println(F("START_LOCAL failed!"));
       }
       break;
     // SET instructions
@@ -169,14 +169,14 @@ void executeInstruction(uint8_t instruction, uint8_t *data, uint8_t dataLength) 
       if (dataLength == 12) {
         setPos(bytesToFloat(data, 4), bytesToFloat(data+4, 4), bytesToFloat(data+8, 4));
       }
-      #if DEBUG
+      #if DEBUG > 0
       else {
         Serial.println(F("SET_POS failed!"));
       }
       #endif
       break;
     default:
-      #if DEBUG
+      #if DEBUG > 0
         Serial.println(F("Bad instruction"));
       #endif
       break;
@@ -233,7 +233,7 @@ void done() {
   driveArdumoto(MOTOR_L, 0);
   driveArdumoto(MOTOR_R, 0);
   hasTarget = false;
-  #if DEBUG
+  #if DEBUG > 0
   Serial.println(F("Stopped"));
   #endif
 }
@@ -250,7 +250,7 @@ void getX() {
     payload[i+1] = ba.b[i];
   // Send the payload
   sendTx16Request(payload, 5);
-  #if DEBUG
+  #if DEBUG > 0
   Serial.print(F("Sending X of: ")); Serial.println(ba.f);
   #endif
 }
@@ -267,7 +267,7 @@ void getY() {
     payload[i+1] = ba.b[i];
   // Send the payload
   sendTx16Request(payload, 5);
-  #if DEBUG
+  #if DEBUG > 0
   Serial.print(F("Sending Y of: ")); Serial.println(ba.f);
   #endif
 }
@@ -284,7 +284,7 @@ void getAngle() {
     payload[i+1] = ba.b[i];
   // Send the payload
   sendTx16Request(payload, 5);
-  #if DEBUG
+  #if DEBUG > 0
   Serial.print(F("Sending angle of: ")); Serial.println(ba.f);
   #endif
 }
@@ -302,7 +302,7 @@ void getLeftTicks() {
     payload[i+1] = ba.b[i];
   // Send the payload
   sendTx16Request(payload, 3);
-  #if DEBUG
+  #if DEBUG > 0
   Serial.print(F("Sending left ticks of: ")); Serial.println(ba.int16);
   #endif
 }
@@ -320,13 +320,13 @@ void getRightTicks() {
     payload[i+1] = ba.b[i];
   // Send the payload
   sendTx16Request(payload, 3);
-  #if DEBUG
+  #if DEBUG > 0
   Serial.print(F("Sending right ticks of: ")); Serial.println(ba.int16);
   #endif
 }
 
 void getBattery() {
-  #if DEBUG
+  #if DEBUG > 0
   Serial.println(F("Unimplemented GET_B call!"));
   #endif
 //  uint16_t b = analogRead(BATTERY_PIN);
@@ -361,30 +361,28 @@ void getPos() {
   }
   // Send the payload
   sendTx16Request(payload, 17);
-  #if DEBUG
+  #if DEBUG > 0
   Serial.println(F("GET_POS Data sent"));
   #endif
 }
  
 void setX(float x) {
   xPosition = x;
-  #if DEBUG
+  #if DEBUG > 0
   Serial.print(F("X Position set to: ")); Serial.println(xPosition);
   #endif
 }
 
 void setY(float y) {
   yPosition = y;
-  #if DEBUG
+  #if DEBUG > 0
   Serial.print(F("Y Position set to: ")); Serial.println(yPosition);
   #endif
 }
 
 void setAngle(float angle) {
   theta = angle;
-  // IMPORTANT: Setting isHeadingSet true allows botCheck to complete
-  isThetaSet = true;
-  #if DEBUG
+  #if DEBUG > 0
   Serial.print(F("Theta set to: ")); Serial.println(theta);
   #endif
 }
@@ -393,7 +391,7 @@ void setPos(float x, float y, float angle) {
   xPosition = x;
   yPosition = y;
   theta = angle;
-  #if DEBUG
+  #if DEBUG > 0
   Serial.print(F("X Position set to: ")); Serial.println(xPosition);
   Serial.print(F("Y Position set to: ")); Serial.println(yPosition);
   Serial.print(F("Theta set to: ")); Serial.println(theta);
