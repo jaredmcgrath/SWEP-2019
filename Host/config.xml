@@ -30,15 +30,19 @@
     </bot>
 
     <beacon>
-      <port>/dev/tty.usbserial-DN01F2NX</port>
+      <port>COM6</port>
       <x>0</x>
       <y>0</y>
     </beacon>
+    
+    
+<!-- Second beacon (Mac OS)
     <beacon>
       <port>/dev/tty.usbserial-DN03ZXNC</port>
       <x>1</x>
       <y>1</y>
     </beacon>
+ -->
 
     <instruction>
           <name>GET_X</name>
