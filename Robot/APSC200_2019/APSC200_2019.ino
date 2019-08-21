@@ -12,7 +12,7 @@
 #define DEST_ADDRESS 0xBEEF
 
 /////////////////////////////// Bot ID constants - CHANGE FOR EACH ///////////////////////////////////////////////
-#define ID 1
+#define ID 0
 int id = ID;
 
 /////////////////////////////// Define all needed pins ///////////////////////////////////////////////
@@ -200,14 +200,15 @@ void botSetup(){
 //action is performed
 void botLoop() {
 
+   // Update bot position using encoders/dead reckoning
+    positionCalc();
+    // Calculates heading using the gyroscope
+    calcGyroAngle();
+    
   // control process
   // TODO: Figure out optimal delay for positionCalc(), calcGyroAngle(), and controlProcess()
   // Currently, all happen once every 100ms
   if (hasTarget && (millis() - previousTime) > 100){
-      // Update bot position using encoders/dead reckoning
-    positionCalc();
-    // Calculates heading using the gyroscope
-    calcGyroAngle();
     controlProcess();
     
     #if DEBUG > 1
