@@ -25,8 +25,8 @@ void positionCalc(){
   yPosition = yPosition + sin(gyroAngleCorrected)*rWheel*0.5*(leftRads+rightRads);
 
   // calculates the change in theta for the iteration of robot motion.
-  theta += (rWheel /(2 * rChasis)) * (rightRads - leftRads);
-
+  //theta += (rWheel /(2 * rChasis)) * (rightRads - leftRads);
+  theta = gyroAngleCorrected;
   // Ensure theta is within 0 to 2*pi
   theta = theta > 2*PI ? theta - 2*PI : (theta < 0 ? theta + 2*PI : theta);
 

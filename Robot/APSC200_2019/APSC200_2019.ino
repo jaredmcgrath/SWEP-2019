@@ -8,11 +8,11 @@
 #include <SoftwareSerial.h>
 
 /////////////////////////////// Program Execution Options ///////////////////////////////////////////////
-#define DEBUG 0
+#define DEBUG 2
 #define DEST_ADDRESS 0xBEEF
 
 /////////////////////////////// Bot ID constants - CHANGE FOR EACH ///////////////////////////////////////////////
-#define ID 0
+#define ID 1
 int id = ID;
 
 /////////////////////////////// Define all needed pins ///////////////////////////////////////////////
@@ -55,17 +55,17 @@ typedef union {
 
 /////////////////////////////// Gyro Constants & Variables /////////////////////////////////////////////////
 #if ID == 0 // Shannon
-#define GYRO_CORRECTION_SLOPE 0.000808367F  // slope for the correction line for the gyro readings
-#define GYRO_CORRECTION_INTERCEPT 0.921095F    // intercept for the correction line for the gyro readings
+#define GYRO_CORRECTION_SLOPE 0.000707326F  // slope for the correction line for the gyro readings
+#define GYRO_CORRECTION_INTERCEPT 0.840189F    // intercept for the correction line for the gyro readings
 #elif ID == 1 // Euler
-#define GYRO_CORRECTION_SLOPE -0.00645618F  // slope for the correction line for the gyro readings
-#define GYRO_CORRECTION_INTERCEPT -1.36407F    // intercept for the correction line for the gyro readings
+#define GYRO_CORRECTION_SLOPE -0.006632F  // slope for the correction line for the gyro readings
+#define GYRO_CORRECTION_INTERCEPT -3.623982F    // intercept for the correction line for the gyro readings
 #elif ID == 2 // Laplace
-#define GYRO_CORRECTION_SLOPE -0.0152088F  // slope for the correction line for the gyro readings
-#define GYRO_CORRECTION_INTERCEPT 2.35949F    // intercept for the correction line for the gyro readings
+#define GYRO_CORRECTION_SLOPE -0.015680F  // slope for the correction line for the gyro readings
+#define GYRO_CORRECTION_INTERCEPT -3.4F    // intercept for the correction line for the gyro readings
 #endif
-float gyroTime;                             // time when gyro measurement taken
-float gyroTimePrevious = 800;     // stores the time when the previous gyro measurment was taken !!!NEEDS TO BE INCLUDED IN STARTUP SEQUENCE!!!
+float gyroTime, gyroStartTime;    // time when gyro measurement taken
+float gyroTimePrevious;           // stores the time when the previous gyro measurment was taken !!!NEEDS TO BE INCLUDED IN STARTUP SEQUENCE!!!
 float gyroGain;                   // stores the gain value returned by the gyro for the z-axis
 float gyroAngleRaw = 0;           // stores the accumulated raw angle, in degrees, measured by the gyroscope from program start
 float gyroAngleCorrected;         // stores the corrected angle of the robot, in radians, measured by the gyro
@@ -184,7 +184,12 @@ void botSetup(){
 
   // Ask for a target point
   getNextTarget();
-  
+
+  // Start Gyro Angle Calculations
+  gyroStartTime = float(millis());
+  gyroTimePrevious = float(millis());
+  calcGyroAngle();
+
   #if DEBUG > 0
   Serial.println(F("botSetup completed"));
   #endif

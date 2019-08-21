@@ -80,7 +80,7 @@ void calcGyroAngle()
   gyroAngleRaw = gyroAngleRaw + (float)((gyroTime - gyroTimePrevious)/1000)*gyroGain;
   
   // Calcualte the corrected gyro angle [radians] using the previous raw angle measurement (which is in degrees) 
-  gyroAngleCorrected = (gyroAngleRaw - (GYRO_CORRECTION_SLOPE * gyroTime + GYRO_CORRECTION_INTERCEPT))*PI/180;
+  gyroAngleCorrected = (gyroAngleRaw - (GYRO_CORRECTION_SLOPE * (gyroTime-gyroStartTime) + GYRO_CORRECTION_INTERCEPT))*PI/180;
   
   // Set of conditionals to keep the corrected heading angle within 0 to 2*PI.
   if (gyroAngleCorrected > 2*PI)
