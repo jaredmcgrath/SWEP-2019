@@ -94,7 +94,7 @@ void calcGyroAngle()
   // Stores the time of the current measurement in a variable to be called for in the next iteration of the function
   gyroTimePrevious = gyroTime;
 
-  #if DEBUG > 2
+  #if DEBUG == 3
   Serial.print(gyroTime);
   Serial.print(",");
   Serial.print(gyroGain);

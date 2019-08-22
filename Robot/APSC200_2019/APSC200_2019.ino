@@ -8,7 +8,12 @@
 #include <SoftwareSerial.h>
 
 /////////////////////////////// Program Execution Options ///////////////////////////////////////////////
-#define DEBUG 2
+#define DEBUG 0
+// DEBUG 0      --> No DEBUG statements run
+// DEBUG >0 & 1 --> Runs DEBUG statements in BotSetup and Communication.ino
+// DEBUG 2      --> Runs printResults for ControlProcess
+// DEBUG 3      --> Prints Results from CalcGyroAngle
+
 #define DEST_ADDRESS 0xBEEF
 
 /////////////////////////////// Bot ID constants - CHANGE FOR EACH ///////////////////////////////////////////////
@@ -69,6 +74,7 @@ float gyroTimePrevious;           // stores the time when the previous gyro meas
 float gyroGain;                   // stores the gain value returned by the gyro for the z-axis
 float gyroAngleRaw = 0;           // stores the accumulated raw angle, in degrees, measured by the gyroscope from program start
 float gyroAngleCorrected;         // stores the corrected angle of the robot, in radians, measured by the gyro
+// float initialHeading;
 
 /////////////////////////////// Sensor Variables ///////////////////////////////////////////////
 sensor_t accelSetup, magSetup, gyroSetup, tempSetup; //Variables used to setup the sensor module
@@ -200,7 +206,7 @@ void botSetup(){
 //action is performed
 void botLoop() {
 
-   // Update bot position using encoders/dead reckoning
+    // Update bot position using encoders/dead reckoning
     positionCalc();
     // Calculates heading using the gyroscope
     calcGyroAngle();
@@ -211,7 +217,7 @@ void botLoop() {
   if (hasTarget && (millis() - previousTime) > 100){
     controlProcess();
     
-    #if DEBUG > 1
+    #if DEBUG == 2
     printResults();
     #endif
 

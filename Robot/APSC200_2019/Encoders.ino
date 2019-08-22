@@ -21,12 +21,14 @@ void positionCalc(){
   rightRads = (rightEncoder - oldRightEncoder) * 2 * PI / 192;
 
   // Calcualte the x and y position of the robot. (OLD VERSION: Used theta instead of gyroAngleCorrected)
-  xPosition = xPosition + cos(gyroAngleCorrected)*rWheel*0.5*(leftRads+rightRads);
-  yPosition = yPosition + sin(gyroAngleCorrected)*rWheel*0.5*(leftRads+rightRads);
+  xPosition = xPosition + cos(theta)*rWheel*0.5*(leftRads+rightRads);
+  yPosition = yPosition + sin(theta)*rWheel*0.5*(leftRads+rightRads);
+
 
   // calculates the change in theta for the iteration of robot motion.
-  //theta += (rWheel /(2 * rChasis)) * (rightRads - leftRads);
-  theta = gyroAngleCorrected;
+  // theta += (rWheel /(2 * rChasis)) * (rightRads - leftRads); // Old version of calculating theta using the motor encoders
+  theta = gyroAngleCorrected + initialHeading * PI / 180; // New version of calculating theta using gyroscope
+  
   // Ensure theta is within 0 to 2*pi
   theta = theta > 2*PI ? theta - 2*PI : (theta < 0 ? theta + 2*PI : theta);
 
