@@ -9,10 +9,10 @@
 
 /////////////////////////////// Program Execution Options ///////////////////////////////////////////////
 #define DEBUG 0
-// DEBUG 0      --> No DEBUG statements run
-// DEBUG >0 & 1 --> Runs DEBUG statements in BotSetup and Communication.ino
-// DEBUG 2      --> Runs printResults for ControlProcess
-// DEBUG 3      --> Prints Results from CalcGyroAngle
+// DEBUG 0            --> No DEBUG statements run
+// DEBUG >0 and/or 1  --> Runs DEBUG statements in BotSetup and function in Communication.ino
+// DEBUG 2            --> Runs printResults for ControlProcess
+// DEBUG 3            --> Prints Results from CalcGyroAngle
 
 #define DEST_ADDRESS 0xBEEF
 
@@ -74,7 +74,6 @@ float gyroTimePrevious;           // stores the time when the previous gyro meas
 float gyroGain;                   // stores the gain value returned by the gyro for the z-axis
 float gyroAngleRaw = 0;           // stores the accumulated raw angle, in degrees, measured by the gyroscope from program start
 float gyroAngleCorrected;         // stores the corrected angle of the robot, in radians, measured by the gyro
-// float initialHeading;
 
 /////////////////////////////// Sensor Variables ///////////////////////////////////////////////
 sensor_t accelSetup, magSetup, gyroSetup, tempSetup; //Variables used to setup the sensor module
@@ -86,7 +85,7 @@ int leftEncoder = 0, rightEncoder = 0; // Stores the encoder values for the curr
 int lastLeftTicks = 0, lastRightTicks = 0; // Ticks upon last call of getLeftTicks/getRightTicks
 
 /////////////////////////////// Position Variables ///////////////////////////////////////////////
-float rWheel = 0.034, rChasis = 0.08;// Radius of the robot wheels
+float rWheel = 0.034, rChasis = 0.08;// Radius of the robot wheels, distacne from Q (centerline of robot) to wheel along drive axis
 float leftRads = 0, rightRads = 0; // Stores the left and right radians of the wheels (from encoder values)
 float deltaTheta; // change in theta for each iteration of robot motion
 float xPosition = 0, yPosition = 0; // Stores the robot's current x and y position estimate from the encoders
@@ -99,15 +98,15 @@ float localX, localY;
 
 ////////////////////////////// PID CONTROL ALGORITHM ////////////////////////////////////////////
 #define DIVIDER 2                               // Reduces output from controller to level that can be used in motor inputs
-float xTarget, yTarget;                 // The current target point the robot is trying to reach
+float xTarget, yTarget;                         // The current target point the robot is trying to reach
 float headingDesired, headingActual;            // Heading angle from current position to target position (the set point, and actual heading of robot
 float headingError, headingErrorPrevious = 0;   // Differnece between current heading and desired heading 
 float headingErrorCum, headingErrorRate;        // Values cumulative and rate of change for heading error. Used in PID calc
-float kP = 150, kI = 0, kD = 0;                  // PID gains, Proportional, Integral and Derivative gain
+float kP = 150, kI = 0, kD = 0;                 // PID gains, Proportional, Integral and Derivative gain
 unsigned long currentTime, previousTime = 900;  // Variables used to help calcualte elapsed time
 float elapsedTime;                              // Used to determine the cumulative and rate of change for heading error
 float output;                                   // Result from PID controller
-int leftInput = 0, rightInput = 0; // A variable to convert the wheel speeds
+int leftInput = 0, rightInput = 0;              // A variable to convert the wheel speeds
 
 ///////////////////////////// HIT TARGET ///////////////////////////////////////////////////////
 #define TARGET_THRESHOLD 0.05F 
@@ -117,7 +116,7 @@ bool hasTarget = false;
 bool doneLocalizing = true;
 
 ////////////////////////////////////////////////////////// Object Declarations //////////////////////////////////////////////////////////
-Adafruit_LSM9DS0 lsm = Adafruit_LSM9DS0(); //An object for the sensor module, to be accessed to get the data
+Adafruit_LSM9DS0 lsm = Adafruit_LSM9DS0(); // An object for the sensor module, to be accessed to get the data
 SoftwareSerial xbeeSerial(4,5);
 XBee xbee = XBee();
 
@@ -163,7 +162,7 @@ void botSetup(){
   #endif
   
   #ifndef ESP8266         // from sensor module example code, don't know if we need this 
-    while (!Serial);     // will pause Zero, Leonardo, etc until serial console opens
+    while (!Serial);      // will pause Zero, Leonardo, etc until serial console opens
   #endif
   
   // Ensure sensor module is intact
@@ -174,19 +173,19 @@ void botSetup(){
 
   // Setup routines
   #if DEBUG > 0
-    displaySensorDetails(); //Shows the details about the sensor module
+    displaySensorDetails(); // Shows the details about the sensor module
   #endif
   
-  configureSensor(); //Configures the sensitivity of the sensor module
-  setupArdumoto(); //Sets up the ardumoto shield for the robot's motors
+  configureSensor(); // Configures the sensitivity of the sensor module
+  setupArdumoto(); // Sets up the ardumoto shield for the robot's motors
 
   // Pin config
   pinMode(ENCODER_L, INPUT_PULLUP); // Set the mode for the encoder pins
   pinMode(ENCODER_R, INPUT_PULLUP);
   digitalWrite(ENCODER_L, HIGH); //Initialize the state of the encoder pins
   digitalWrite(ENCODER_R, HIGH);
-  attachInterrupt(digitalPinToInterrupt(ENCODER_L), leftEncoderTicks, RISING); //assign the interrupt service routines to the pins
-  attachInterrupt(digitalPinToInterrupt(ENCODER_R), rightEncoderTicks, RISING); //This is done on the Uno's interrupts pins so this syntax is valid, else use the PCI syntax 
+  attachInterrupt(digitalPinToInterrupt(ENCODER_L), leftEncoderTicks, RISING); // Assign the interrupt service routines to the pins
+  attachInterrupt(digitalPinToInterrupt(ENCODER_R), rightEncoderTicks, RISING); // This is done on the Uno's interrupts pins so this syntax is valid, else use the PCI syntax 
 
   // Ask for a target point
   getNextTarget();
@@ -201,15 +200,15 @@ void botSetup(){
   #endif
 }
 
-//The main loop of the robot, could be moved fully to the loop function if desired, on every iteration, x, y, theta are all
-//updated by the encoders and the gyro then the Xbee is checked to see if it has any intruction from MATLAB, then the appropriate
-//action is performed
+// The main loop of the robot, could be moved fully to the loop function if desired, on every iteration, x, y, theta are all
+// updated by the encoders and the gyro then the Xbee is checked to see if it has any intruction from MATLAB, then the appropriate
+// action is performed
 void botLoop() {
 
-    // Update bot position using encoders/dead reckoning
-    positionCalc();
-    // Calculates heading using the gyroscope
-    calcGyroAngle();
+  // Update bot position using encoders/dead reckoning
+  positionCalc();
+  // Calculates heading using the gyroscope
+  calcGyroAngle();
     
   // control process
   // TODO: Figure out optimal delay for positionCalc(), calcGyroAngle(), and controlProcess()
