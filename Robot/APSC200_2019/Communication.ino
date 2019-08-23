@@ -384,6 +384,9 @@ void setY(float y) {
 
 void setAngle(float angle) {
   theta = angle;
+  gyroAngleRaw = 180/PI*angle;
+  gyroStartTime = float(millis());
+  
   #if DEBUG
   Serial.print(F("Theta set to: ")); Serial.println(theta);
   #endif
@@ -420,6 +423,8 @@ void setPos(float x, float y, float angle) {
   xPosition = x;
   yPosition = y;
   theta = angle;
+  gyroAngleRaw = 180/PI*angle;
+  
   #if DEBUG
   Serial.print(F("X Position set to: ")); Serial.println(xPosition);
   Serial.print(F("Y Position set to: ")); Serial.println(yPosition);

@@ -54,9 +54,17 @@ typedef union {
 } ByteArray16;
 
 /////////////////////////////// Gyro Constants & Variables /////////////////////////////////////////////////
+#if ID == 0 // Shannon
 #define GYRO_CORRECTION_SLOPE 0.000808367F  // slope for the correction line for the gyro readings
 #define GYRO_CORRECTION_INTERCEPT -0.921095F    // intercept for the correction line for the gyro readings
-float gyroTime;                             // time when gyro measurement taken
+#elif ID == 1 // Euler
+#define GYRO_CORRECTION_SLOPE 0.000808367F  // slope for the correction line for the gyro readings
+#define GYRO_CORRECTION_INTERCEPT -0.921095F    // intercept for the correction line for the gyro readings
+#elif ID == 2 // Laplace
+#define GYRO_CORRECTION_SLOPE 0.000808367F  // slope for the correction line for the gyro readings
+#define GYRO_CORRECTION_INTERCEPT -0.921095F    // intercept for the correction line for the gyro readings
+#endif
+float gyroTime, gyroStartTime;    // time when gyro measurement taken, time first call of gyroAngleCalc
 float gyroTimePrevious = 800;     // stores the time when the previous gyro measurment was taken !!!NEEDS TO BE INCLUDED IN STARTUP SEQUENCE!!!
 float gyroGain;                   // stores the gain value returned by the gyro for the z-axis
 float gyroAngleRaw = 0;           // stores the accumulated raw angle, in degrees, measured by the gyroscope from program start
@@ -186,7 +194,11 @@ void botSetup(){
   digitalWrite(ENCODER_R, HIGH);
   attachInterrupt(digitalPinToInterrupt(ENCODER_L), leftEncoderTicks, RISING); //assign the interrupt service routines to the pins
   attachInterrupt(digitalPinToInterrupt(ENCODER_R), rightEncoderTicks, RISING); //This is done on the Uno's interrupts pins so this syntax is valid, else use the PCI syntax 
-  
+
+  // Set up robot heading
+  gyroStartTime = float(millis());
+  theta = calcGyroAngle();
+   
   #if DEBUG
   Serial.println(F("botSetup completed"));
   #endif
